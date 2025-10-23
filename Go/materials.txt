@@ -1,3 +1,3 @@
 Официальная спецификация языка Go - https://go.dev/ref/spec
 Неофициальная методичка по языку Go - https://metanit.com/go/tutorial/
-Ссылка на репозиторий GitHub - TODO
+Ссылка на репозиторий GitHub - https://github.com/AlKharkov/go-graduate-work
