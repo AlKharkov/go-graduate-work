@@ -4,5 +4,4 @@
 3. Неявные блоки в if, ...
 4. Statements ничего не возвращают, в отличие от expressions
 
-
 ## Questions

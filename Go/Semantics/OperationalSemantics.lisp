@@ -1,7 +1,7 @@
 #|
 	Operational semantics for the Go language
 
-    Last edit: 31/10/2025
+    Last edit: 01/11/2025
 |#
 
 
@@ -22,7 +22,9 @@
 
 ;;; Go values
 (aclosure "opsem" (uniont "constant" "location") i ac i)
-(aclosure "opsem" "function definition" i ac 
+(aclosure "opsem" "function definition" i ac i)
+; А это всё фигня!
+(
     (match :av ac "stage" nil ...)  ; Сохранить все переменные из body и parameters - "variable string"
     (match :av ac "stage" "body" :do
         (update-push-aclosure ac "stage" "body")
