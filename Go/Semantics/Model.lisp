@@ -1,7 +1,7 @@
 #|
 	Model of the Go language
 
-	Last edit: 24/10/2025
+	Last edit: 31/10/2025
 |#
 
 
@@ -55,8 +55,8 @@
 ;;function types
 (mot "function type" :at "signature" "signature")
 (mot "signature" :at "parameters" "parameters" :at "result" "function result")
-(typedef "parameters" (uniont (listt "parameter decl")))
-(mot "paramater decl" :at "name" (listt "identifier") :at "type" (uniont "type" "variadic type"))
+(mot "parameters" :at "declarations" (listt "parameter decl"))
+(mot "parameter decl" :at "names" (listt "identifier") :at "type" (uniont "type" "variadic type"))
 (mot "variadic type" :at "type" "type")  ; func f(numbers ...int) -> f(1, 2, 3, 4)
 (typedef "function result" (uniont "parameters" "type"))
 ; func("parameters") "result"
@@ -101,7 +101,14 @@
 
 
 ;;; Blocks
-(mot "block" :at "statements" (listt "statement"))
+(mot "block"
+	:at "statements" (listt "statement")
+	; semantic attributes
+	:at "variables" (listt "variable")
+	:at "variable location" (cot :amap "variable" "location")
+	:at "labels" (listt "label")
+	:at "label position" (cot :amap "label" nat)
+)
 
 
 ;;; Declarations
@@ -354,8 +361,8 @@
 
 
 ;;; External definitions
-;(mot "translation unit" :at "declarations" (listt "external declaration"))  	; Что это и зачем?
-;(typedef "external declaration" (uniont "function definition" "declaration"))  ; Что это и зачем?
+(mot "translation unit" :at "declarations" (listt "external declaration"))
+(typedef "external declaration" (uniont "function definition" "declaration"))
 (mot "function definition" :at "signature" "signature" :at "body" "block")
 
 
