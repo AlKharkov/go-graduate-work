@@ -1,11 +1,12 @@
 #|
 	Model of the Go language
 
-	Last edit: 31/10/2025
+	Last edit: 01/11/2025
 |#
 
 
 ;;; Lexical elements
+(typedef "comment" (uniont "line comment" "general comment"))
 (mot "line comment" :at "text" string)     ; // single-line comment
 (mot "general comment" :at "text" string)  ; /* multi-line comment */
 (typedef "identifier" (uniont string))     ; a | _x9 | ThisVariableIsExported | αβ
@@ -104,8 +105,8 @@
 (mot "block"
 	:at "statements" (listt "statement")
 	; semantic attributes
-	:at "variables" (listt "variable")
-	:at "variable location" (cot :amap "variable" "location")
+	:at "variables" (listt "variable")                         ; Все переменные, изменяемые в блоке
+	:at "variable location" (cot :amap "variable" "location")  ; Старые ячейки этих переменных, nil - если не существовали ранее
 	:at "labels" (listt "label")
 	:at "label position" (cot :amap "label" nat)
 )
@@ -168,7 +169,7 @@
 
 ;;; Expressions
 ;;operands
-(typedef "operand" (uniont "literal" "parenthesized expression"))
+(typedef "operand" (uniont "literal" "(expression)"))
 (typedef "literal" (uniont "basic literal" "composite literal" "function literal"))
 (typedef "basic literal" (uniont "constant"))
 (mot "composite literal" :at "type" "literal type" :at "value" (listt "keyed element"))
@@ -179,17 +180,16 @@
 (typedef "key" (uniont "field name" "expression" (listt "keyed element")))
 (typedef "element" (uniont "expression" (listt "keyed element")))
 (mot "function literal" :at "signature" "signature" :at "body" "block")  ; func(a, b int, z float64) bool { return a*b < int(z) }
-(mot "parenthesized expression" :at "expression" "expression")
+(mot "(expression)" :at "expression" "expression")
 ;;primary expressions
-(typedef "primary expression" (uniont "operand" "conversion" "method expr" "primary expr & selector" "primary expr & index expr" "primary expr & slice expr" "primary expr & type assertion" "primary expr & argument"))
+(typedef "primary expression" (uniont "operand" "conversion" "method expr" "selector expression" "primary expr & index expr" "primary expr & slice expr" "primary expr & type assertion" "primary expr & argument"))
 (mot "conversion" :at "type" "type" :at "expression" "expression")  ; (*Point)(p)    // p is converted to *Point
-(mot "method expression" :at "receiver type" "type" :at "name" "identifier")
+(mot "method expression" :at "receiver type" "type" :at "name" "identifier")  ; T.Mv
 ; type T struct {
 ; 	a int
 ; }
 ; func (tv T) Mv(b int) int { return tv.a + b }    // value receiver
-(mot "primary expr & selector" :at "primary expr" "primary expression" :at "selector" "selector")
-(mot "selector" :at "name" "identifier")  ; x.id
+(mot "selector expression" :at "expression" "primary expression" :at "selector" "identifier")  ; x.id
 (mot "primary expr & index expr" :at "primary expr" "primary expression" :at "index" "index")
 (mot "index expr" :at "expression" "expression")  ; x[e]
 (mot "primary expr & slice expr" :at "primary expr" "primary expression" :at "slice" "slice")
@@ -368,4 +368,4 @@
 
 ;;; Semantics constructs
 (mot "location")
-(typedef "go value" (uniont "constant" "location" "function definition"))
+(typedef "Go value" (uniont "constant" "location" "function definition"))
