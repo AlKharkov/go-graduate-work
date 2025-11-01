@@ -32,9 +32,9 @@
 (aclosure "opsem" "block" i ac
     (match :av ac "stage" nil :ap i "statements" sts :do
         (update-push-aclosure ac "stage" "exit block")
-        (clear-update-eval-aclosure ac :av "stage" "iteration" :av "current" 0 :av "bound" (length sts) :av "statements" sts)  ; u-p-a -> c-u-e-a
+        (clear-update-eval-aclosure ac :av "stage" "iteration" :av "current" 0 :av "bound" (length sts) :av "statements" sts)
     )
-    (match :av ac "stage" "iteration" :ap ac "current" p :ap ac "bound" n :ap ac "statements" sts :v (< p n) T :do  ; В оригинале нет "ac" после :ap
+    (match :av ac "stage" "iteration" :ap ac "current" p :ap ac "bound" n :ap ac "statements" sts :v (< p n) T :do
         (update-push-aclosure ac "current" (+ p 1))
         (clear-update-eval-aclosure ac "instance" (nth p sts))
     )
@@ -79,5 +79,4 @@
         (clear-update-eval-aclosure ac :ap )
     )
 )
-
 
