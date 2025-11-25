@@ -1,7 +1,7 @@
 #|
 	Operational semantics for the Go language
 
-    Last edit: 18/11/2025
+    Last edit: 25/11/2025
 |#
 
 
@@ -18,39 +18,42 @@
 
 
 ;;; Go values
-(aclosure "opsem" "Go value" i ac i)
+(aclosure ac "opsem" "Go value" i :do i)
 
 
 ;;; Variables
-(aclosure "opsem::rvalue" "variable" i ac (match :ap ac "agent" a :do (aget a "location value" (aget a "variable location" i))))
-(aclosure "opsem::lvalue" "variable" i ac (aget ac "agent" "variable location" i))
+(aclosure ac "opsem::rvalue" "variable" i :do (match :ap ac "agent" a :do (aget a "location value" (aget a "variable location" i))))
+(aclosure ac "opsem::lvalue" "variable" i :do (aget ac "agent" "variable location" i))
 
 
 ;;; Types
-(aclosure "opsem" "type" i ac i)
+(aclosure ac "opsem" "type" i :do i)
 
 
 ;;; Blocks
-(aclosure "opsem" "block" i ac
-    (match :av ac "stage" nil :ap i "statements" sts :do
-        (update-push-aclosure ac "stage" "exit block")
-        (clear-update-eval-aclosure ac :av "stage" "iteration" :av "current" 0 :av "bound" (length sts) :av "statements" sts)
-    )
-    (match :av ac "stage" "iteration" :ap ac "current" p :ap ac "bound" n :ap ac "statements" sts :v (< p n) T :do
-        (update-push-aclosure ac "current" (+ p 1))
-        (clear-update-eval-aclosure ac "instance" (nth p sts))
-    )
-    (match :av ac "stage" "exit block" :av i "variables" vs :do
-        (clear-update-eval-aclosure ac :av "stage" "variable handling" :av "variables" vs)
-    )
-    (match :av ac "stage" "variable handling" :ap i "variables" vs :v (not (empty vs)) T :p (nth 0 vs) v :p (aget i "variable location" v) vl :ap ac "agent" a :do
-        (update-push-aclosure ac "variables" (cdr vs))
-        ; TODO
-        ; Удалить a["variable location"][v]
-        ; Если не nil, то:
-        ;   Создать a["variable location"].add(v, vl)
-    )
+(aclosure ac "opsem" "block" i :stage nil  ; Буду считать указание стадии nil правилом хорошего тона для замыканий, где stage используется
+    :ap i "statements" sts :do
+    (update-push-aclosure ac "stage" "exit block")
+    (clear-update-eval-aclosure ac :av "stage" "iteration" :av "current" 0 :av "bound" (length sts) :av "statements" sts)
 )
+(aclosure ac "opsem" "block" i :stage "iteration"
+    :ap ac "current" p :ap "bound" n :ap ac "statements" sts :v (< p n) T :do
+    (update-push-aclosure ac "current" (+ p 1))
+    (clear-update-eval-aclosure ac "instance" (nth p sts))
+)
+(aclosure ac "opsem" "block" i :stage "exit block"
+    :av i "variables" vs :do
+    (clear-update-eval-aclosure ac :av "stage" "variable handling" :av "variables" vs)
+)
+(aclosure ac "opsem" "block" i :stage "variable handling" :agent a
+    :ap i "variables" vs :v (not (empty vs)) T :p (nth 0 vs) v :p (aget i "variable location" v) vl :do
+    (update-push-aclosure ac "variables" (cdr vs))
+    ; TODO
+    ; Удалить a["variable location"][v]
+    ; Если не nil, то:
+    ;   Создать a["variable location"].add(v, vl)
+)
+
 
 
 ;;; Declarations
@@ -59,17 +62,16 @@
 
 ;;; Expressions
 ;; Operands
-(aclosure "opsem" "composite literal" ...)  ; TODO
-(aclosure "opsem" "keyed element" i ac i)
-(aclosure "opsem" "function literal" ...)  ; TODO
-(aclosure "opsem" "operand[T]" i ac
+(aclosure ac "opsem" "composite literal" i :do ...)  ; TODO
+(aclosure ac "opsem" "keyed element" i :do i)
+(aclosure ac "opsem" "function literal" i :do ...)  ; TODO
+(aclosure ac "opsem" "operand[T]" i :do
     ; Создать новый объект, с подставленным типом
     ; TODO
 )
-(aclosure "opsem::lvalue" "(expression)" i ac (clear-update-eval-aclosure ac "instance" (aget i "expression")))
-(aclosure "opsem::rvalue" "(expression)" i ac (clear-update-eval-aclosure ac "instance" (aget i "expression")))
+(aclosure ac "opsem" "(expression)" i :do (clear-update-eval-aclosure ac "instance" (aget i "expression")))
 
-(aclosure "opsem::rvalue" "conversion" i ac
+(aclosure "opsem" "conversion" i ac
     (match :av ac "stage" nil :ap i "expression" e :do
         (update-push-aclosure ac "stage" "type")
         (clear-update-eval-aclosure ac "instance" e)
