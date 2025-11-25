@@ -1,7 +1,7 @@
 #|
 	Operational semantics for the Go language
 
-    Last edit: 01/11/2025
+    Last edit: 18/11/2025
 |#
 
 
@@ -14,8 +14,6 @@
     :at "variable location" (cot :amap "variable" "location")
     :at "location value" (cot :amap "location" "Go value")
     :at "location type" (cot :amap "location" "type")
-    :at "function signature" (cot :amap "location" "signature")
-    :at "function body" (cot :amap "location" "block")
 )
 
 
@@ -26,6 +24,10 @@
 ;;; Variables
 (aclosure "opsem::rvalue" "variable" i ac (match :ap ac "agent" a :do (aget a "location value" (aget a "variable location" i))))
 (aclosure "opsem::lvalue" "variable" i ac (aget ac "agent" "variable location" i))
+
+
+;;; Types
+(aclosure "opsem" "type" i ac i)
 
 
 ;;; Blocks
@@ -57,15 +59,31 @@
 
 ;;; Expressions
 ;; Operands
-(aclosure "opsem::lvalue" "(expression)" i ac (clear-update-eval-aclosure ac "instance" (aget i "expression")))
-(aclosure "opsem::rvalue" "(expression)" i ac (clear-update-eval-aclosure ac "instance" (aget i "expression")))
-(aclosure "opsem::rvalue" "composite literals" ...)  ; TODO
-(aclosure "opsem::rvalue" "function literal" i ac
-    ; Создать объект function definition = fd
+(aclosure "opsem" "composite literal" ...)  ; TODO
+(aclosure "opsem" "keyed element" i ac i)
+(aclosure "opsem" "function literal" ...)  ; TODO
+(aclosure "opsem" "operand[T]" i ac
+    ; Создать новый объект, с подставленным типом
     ; TODO
 )
-(aclosure "opsem::rvalue" "operand" i ac i)
-(aclosure "opsem::rvalue" "conversion" i ac ...)  ; TODO
+(aclosure "opsem::lvalue" "(expression)" i ac (clear-update-eval-aclosure ac "instance" (aget i "expression")))
+(aclosure "opsem::rvalue" "(expression)" i ac (clear-update-eval-aclosure ac "instance" (aget i "expression")))
+
+(aclosure "opsem::rvalue" "conversion" i ac
+    (match :av ac "stage" nil :ap i "expression" e :do
+        (update-push-aclosure ac "stage" "type")
+        (clear-update-eval-aclosure ac "instance" e)
+    )
+    (match :av ac "stage" "type" :ap ac "agent" a :ap a "value" e :ap i "type" t :do
+        (update-push-aclosure ac :av "stage" "access" :av "expression" e)
+        (clear-update-eval-aclosure ac "instance" "type")
+    )
+    (match :av ac "stage" "access" :ap ac "expression" e :ap ac "agent" a :ap a "value" t
+        ; Собственно приведение типа
+        ; TODO
+    )
+)
+
 (aclosure "opsem::rvalue" "method expression" i ac ...)  ; TODO
 ;(mot "struct" :at "fields" (listt "field valued"))              ; Куда это?
 ;(mot "field valued" :at "name" "identifier" :at "value" "Go value")  ; Определение экземпляра структурного объекта

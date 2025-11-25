@@ -1,7 +1,7 @@
 #|
 	Model of the Go language
 
-	Last edit: 01/11/2025
+	Last edit: 18/11/2025
 |#
 
 
@@ -169,17 +169,15 @@
 
 ;;; Expressions
 ;;operands
-(typedef "operand" (uniont "literal" "(expression)"))
-(typedef "literal" (uniont "basic literal" "composite literal" "function literal"))
-(typedef "basic literal" (uniont "constant"))
-(mot "composite literal" :at "type" "literal type" :at "value" (listt "keyed element"))
+(typedef "operand" (uniont "literal" "operand[T]" "(expression)"))
+(typedef "literal" (uniont "constant" "composite literal" "function literal"))
+(mot "composite literal" :at "type" "literal type" :at "value" (listt "keyed element"))  ; It construct new values for structs, arrays, slices, and maps each time they are evaluated
 (mot "keyed element" :at "key" "key" :at "element" "element")
-(typedef "literal type" (uniont "struct type" "array type" "slice type" "map type" "short arr type"))
-(mot "short arr type" :at "name" (uniont "identifier" "qualified identifier") :at "type args" (listt "type"))
-(mot "qualified identifier" :at "package name" "identifier" :at "name" "identifier")  ; math.Sin
+(typedef "literal type" (uniont "struct type" "array type" "slice type" "map type"))
 (typedef "key" (uniont "field name" "expression" (listt "keyed element")))
 (typedef "element" (uniont "expression" (listt "keyed element")))
 (mot "function literal" :at "signature" "signature" :at "body" "block")  ; func(a, b int, z float64) bool { return a*b < int(z) }
+(mot "operand[T]" :at "name" "identifier" :at "types" (listt "type"))  ; substituting types into a template
 (mot "(expression)" :at "expression" "expression")
 ;;primary expressions
 (typedef "primary expression" (uniont "operand" "conversion" "method expr" "selector expression" "primary expr & index expr" "primary expr & slice expr" "primary expr & type assertion" "primary expr & argument"))
@@ -368,4 +366,4 @@
 
 ;;; Semantics constructs
 (mot "location")
-(typedef "Go value" (uniont "constant" "location" "function definition"))
+(typedef "Go value" (uniont "constant" "location" "function body"))
