@@ -1,7 +1,7 @@
 #|
 	Model of the Go language
 
-	Last edit: 18/11/2025
+	Last edit: 27/11/2025
 |#
 
 
@@ -180,7 +180,7 @@
 (mot "operand[T]" :at "name" "identifier" :at "types" (listt "type"))  ; substituting types into a template
 (mot "(expression)" :at "expression" "expression")
 ;;primary expressions
-(typedef "primary expression" (uniont "operand" "conversion" "method expr" "selector expression" "primary expr & index expr" "primary expr & slice expr" "primary expr & type assertion" "primary expr & argument"))
+(typedef "primary expression" (uniont "operand" "conversion" "method expr" "selector expression" "index expr" "slice expr" "type assertion" "function call"))
 (mot "conversion" :at "type" "type" :at "expression" "expression")  ; (*Point)(p)    // p is converted to *Point
 (mot "method expression" :at "receiver type" "type" :at "name" "identifier")  ; T.Mv
 ; type T struct {
@@ -188,27 +188,25 @@
 ; }
 ; func (tv T) Mv(b int) int { return tv.a + b }    // value receiver
 (mot "selector expression" :at "expression" "primary expression" :at "selector" "identifier")  ; x.id
-(mot "primary expr & index expr" :at "primary expr" "primary expression" :at "index" "index")
-(mot "index expr" :at "expression" "expression")  ; x[e]
-(mot "primary expr & slice expr" :at "primary expr" "primary expression" :at "slice" "slice")
-(mot "slice expr" :at "low" "expression" :at "high" "expression" :at "max" "expression")  ; x[e1 : e2] | x[e1 : e2 : e3]
-(mot "primary expr & type assertion" :at "primary expr" "primary expression" :at "type assertion" "type assertion")
-(mot "type assertion" :at "type" "type")  ; .(Type)
+(mot "index expr" :at "list" "primary expression" :at "index" "expression")  ; x[e]
+(mot "slice expr" :at "list" "primary expression" :at "slice" "slice")
+(mot "slice" :at "low" "expression" :at "high" "expression" :at "max" "expression")  ; x[e1 : e2] | x[e1 : e2 : e3]
+(mot "type assertion" :at "expression" "primary expression" :at "type" "type")  ; .(Type)
 ; var x interface{} = 7    // x has dynamic type int and value 7
 ; i := x.(int)             // i has type int and value 7
-(mot "primary expr & arguments" :at "primary expr" "primary expression" :at "arguments" (listt "argument"))  ; math.Sin(2)
-(mot "argument" :at "expressions" (listt "expression") :at "type" "type")
+(mot "function call" :at "function" "primary expression" :at "arguments" (listt "argument"))  ; math.Sin(2)
+(mot "argument" :at "expressions" (listt "expression") :at "type" "type")  ; func f(a, b int, c, d float64)
 ;;expressions
 (typedef "expression" (uniont "unary expression" "binary expression"))
 ;;unary expressions
 (typedef "unary expression" (uniont "primary expression" "+1" "-1" "^1" "!1" "*1" "&1" "<-"))
-(mot "+1" :at 1 "expression")  ; +x == x
-(mot "-1" :at 1 "expression")  ; -x == -1 * x
-(mot "^1" :at 1 "expression")  ; ^10(2) == 01(2)
-(mot "!1" :at 1 "expression")  ; !true == false
-(mot "*1" :at 1 "expression")
-(mot "&1" :at 1 "expression")
-(mot "<-" :at "channel" "channel type")
+(mot "+1" :at 1 "unary expression")  ; +x == x
+(mot "-1" :at 1 "unary expression")  ; -x == -1 * x
+(mot "^1" :at 1 "unary expression")  ; ^10(2) == 01(2)
+(mot "!1" :at 1 "unary expression")  ; !true == false
+(mot "*1" :at 1 "unary expression")
+(mot "&1" :at 1 "unary expression")
+(mot "<-1" :at 1 "unary expression")
 ;;binary expressions
 (typedef "binary expression" (uniont "1||2" "1&&2" "rel expression" "add expression" "mul expression"))
 (mot "1||2" :at 1 "expression" :at 2 "expression")
@@ -366,4 +364,4 @@
 
 ;;; Semantics constructs
 (mot "location")
-(typedef "Go value" (uniont "constant" "location" "function body"))
+(typedef "Go value" (uniont "constant" "location" "function body"))  ; "variable" | "array" "struct"...
