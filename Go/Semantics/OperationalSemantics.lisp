@@ -1,19 +1,19 @@
 #|
 	Operational semantics for the Go language
 
-    Last edit: 27/11/2025
+    Last edit: 19/12/2025
 |#
 
 
 ;;; Enviroment and Agents
 (mot "env" 
     :at "agents" (listt "agent")
-    :at "init target construct" (uniont "expression" "statement" "external declaration" "translation unit")
+    :at "target construct" (uniont "expression" "statement" "external declaration" "translation unit")
 )
 (mot "agent"
-    :at "variable location" (cot :amap "variable" "location")
-    :at "location value" (cot :amap "location" "Go value")
-    :at "location type" (cot :amap "location" "type")
+    :at "location" (cot :amap "identifier" "location")
+    :at "type name" (cot :amap "type name" "type")
+    :at "value" "Go value"
 )
 
 
@@ -22,37 +22,37 @@
 
 
 ;;; Variables
-(aclosure ac "opsem::rvalue" "variable" i :agnet a :do (aget a "location value" (aget a "variable location" i)))
-(aclosure ac "opsem::lvalue" "variable" i :agent a :do (aget a "variable location" i))
+(aclosure ac "opsem::rvalue" "identifier" i :agent a :do (aget (aget a "location" i) "value"))
+(aclosure ac "opsem::lvalue" "identifier" i :agent a :do (aget a "location" i))
 
 
-#|;;; Types
-(aclosure ac "opsem" "base type" i :do)
-(aclosure ac "opsem" "array type" i :do ...)  ; TODO
-(aclosure ac "opsem" "slice type" i :do ...)  ; TODO
-(aclosure ac "opsem" "struct type" i :do ...)  ; TODO
-(aclosure ac "opsem" "pointer type" i :do ...)  ; TODO
-(aclosure ac "opsem" "function type" i :do ...)  ; TODO
-(aclosure ac "opsem" "variadic type" i :do ...)  ; TODO
-(aclosure ac "opsem" "interface type" i :do ...)  ; TODO
-(aclosure ac "opsem" "underlying type" i :do ...)  ; TODO
-(aclosure ac "opsem" "map type" i :do ...)  ; TODO
-(aclosure ac "opsem" "channel type" i :do ...)  ; TODO?|#
+;;; Types
+(aclosure ac "default type value" "base type" i :do (clear-update-eval-aclosure ac :attribute "opsem::rvalue"))
+(aclosure ac "default type value" "array type" i :do ...) ; TODO...
+(aclosure ac "default type value" "slice type" i :do ...) ; TODO...
+(aclosure ac "default type value" "struct type" i :do ...) ; TODO...
+(aclosure ac "default type value" "pointer type" i :do ...) ; TODO...
+(aclosure ac "default type value" "function type" i :do ...) ; TODO...
+(aclosure ac "default type value" "interface type" i :do ...) ; TODO...
+(aclosure ac "default type value" "underlying type" i :do ...) ; TODO...
+(aclosure ac "default type value" "map type" i :do ...) ; TODO...
+(aclosure ac "default type value" "channel type" i :do ...) ; TODO...
+
 
 ;;; Blocks
-(aclosure ac "opsem" "block" i :stage nil  ; Буду считать указание стадии nil правилом хорошего тона для замыканий, где stage используется
+(aclosure ac "opsem" "block" i :stage nil
     :ap i "statements" sts :do
-    (update-push-aclosure ac "stage" "exit block")
-    (clear-update-eval-aclosure ac :av "stage" "iteration" :av "current" 0 :av "bound" (length sts) :av "statements" sts)
+    (update-push-aclosure ac :stage "exit block")
+    (clear-update-eval-aclosure ac :stage "iteration" :av "current" 0 :av "bound" (length sts) :av "statements" sts)
 )
 (aclosure ac "opsem" "block" i :stage "iteration"
     :ap ac "current" p :ap "bound" n :ap ac "statements" sts :v (< p n) T :do
     (update-push-aclosure ac "current" (+ p 1))
-    (clear-update-eval-aclosure ac "instance" (nth p sts))
+    (clear-update-eval-aclosure ac :instance (nth p sts))
 )
 (aclosure ac "opsem" "block" i :stage "exit block"
     :av i "variables" vs :do
-    (clear-update-eval-aclosure ac :av "stage" "variable handling" :av "variables" vs)
+    (clear-update-eval-aclosure ac :stage "variable handling" :av "variables" vs)
 )
 (aclosure ac "opsem" "block" i :stage "variable handling" :agent a
     :ap i "variables" vs :v (not (empty vs)) T :p (nth 0 vs) v :p (aget i "variable location" v) vl :do
@@ -64,9 +64,81 @@
 )
 
 
-
 ;;; Declarations
-;TODO
+(aclosure ac "opsem" "const decl" i :stage nil
+    :ap i "specifiers" specs :do
+    (update-eval-aclosure ac :stage "iteration" :av "current" 0 :av "bound" (length specs) :av "specs" specs)
+)
+(aclosure ac "opsem" "const decl" i :stage "iteration"
+    :ap ac "current" p :ap ac "bound" n :ap ac "specs" specs :v (< p n) T :do
+    (update-push-aclosure ac "current" (+ p 1))
+    (clear-update-eval-aclosure ac :instance (nth p specs))
+)
+
+(aclosure ac "opsem" "const spec" i :stage nil
+    :ap i "names" ns :ap i "initializers" is :do
+    (update-eval-aclosure ac :stage "iteration" :av "current" 0 :av "bound" (length ns))
+)
+(aclosure ac "opsem" "const spec" i :stage "iteration"
+    :ap i "type" tp :ap i "names" ns :ap i "initializers" is
+    :ap ac "current" p :ap ac "bound" b :v (< p b) T :do
+    (update-push-aclosure ac "current" (+ p 1))
+    (update-push-aclosure ac :stage "setting value" :av "name" (nth p ns) :av "type" tp)
+    (clear-update-eval-aclosure ac :instance (nth p is))
+)
+(aclosure ac "opsem" "const spec" i :stage "setting value"
+    :ap ac "name" name :ap ac "type" tp :value v :agent a :do
+    (aset a "location" name (mo "location" :av "type" tp :av "value" v))
+)
+
+(aclosure ac "opsem" "type decl" i :do ...) ; TODO
+
+(aclosure ac "opsem" "var decl" i :stage nil
+    :ap i "specifiers" specs :do
+    (update-eval-aclosure ac :stage "iteration" :av "current" 0 :av "bound" (length specs) :av "specs" specs)
+)
+(aclosure ac "opsem" "var decl" i :stage "iteration"
+    :ap ac "current" p :ap ac "bound" n :ap ac "specs" specs :v (< p n) T :do
+    (update-push-aclosure ac "current" (+ p 1))
+    (clear-update-eval-aclosure ac :instance (nth p specs))
+)
+
+(aclosure ac "opsem" "var spec" i :stage nil
+    :ap i "names" ns :ap i "initializers" is :do
+    (update-eval-aclosure ac :stage "iteration" :av "current" 0 :av "bound names" (length ns) :av "bound inits" (length is))
+)
+(aclosure ac "opsem" "var spec" i :stage "iteration"
+    :ap i "type" tp :ap i "names" ns :ap i "initializers" is
+    :ap ac "current" p :ap ac "bound names" bn :ap ac "bound inits" bi :v (< p bn) T :do
+    (update-push-aclosure ac "current" (+ p 1))
+    (update-push-aclosure ac :stage "setting value" :av "name" (nth p ns) :av "type" tp)
+    (match :v (< p bi) :do
+        (clear-update-eval-aclosure ac :instance (nth p is))
+        :exit (clear-update-eval-aclosure ac :attribute "default type value" :instance tp)
+    )
+)
+(aclosure ac "opsem" "var spec" i :stage "setting value"
+    :ap ac "name" name :ap ac "type" tp :value v :agent a :do
+    (aset a "location" name (mo "location" :av "type" tp :av "value" v))
+)
+
+(aclosure ac "opsem" "short var decl")  ; Limitations prohibit
+
+(aclosure ac "opsem" "function decl" i :stage nil
+    :ap i "name" name :ap i "signature" s :ap i "body" b :agent a :do
+    (aset a "location" name (mo "location"
+        :av "value" (mo "function literal" :av "signature" s :av "body" b)
+        :av "type" ... ; Тип - функция(signature) - function type
+        )
+    )
+)
+
+(aclosure ac "opsem" "signature" i :stage nil :do
+    (update-push-aclosure ac :stage "start iterating")
+)
+(aclosure ac "opsem" "signature" i :stage "iteration")
+
+(aclosure ac "opsem" "method decl") ; TODO
 
 
 ;;; Expressions
@@ -76,22 +148,21 @@
 (aclosure ac "opsem" "function literal" i :do ...)  ; TODO
 (aclosure ac "opsem" "operand[T]" i :do
     ; Создать новый объект, с подставленным типом
-    ; TODO
+    ; Limitations prohibit
 )
-(aclosure ac "opsem::lvalue" "(expression)" i :do (clear-update-eval-aclosure ac "instance" (aget i "expression")))
-(aclosure ac "opsem::rvalue" "(expression)" i :do (clear-update-eval-aclosure ac "instance" (aget i "expression")))
+(aclosure ac "opsem::any" "(expression)" i :ap i "expression" e :do (clear-update-eval-aclosure ac "instance" e))
 ;primary expressions
-(aclosure ac "opsem" "conversion" i :stage nil
+(aclosure ac "opsem::any" "conversion" i :stage nil
     :ap i "expression" e :do
-    (update-push-aclosure ac "stage" "type")
-    (clear-update-eval-aclosure ac "instance" e)
+    (update-push-aclosure ac :stage "type")
+    (clear-update-eval-aclosure ac :instance e)
 )
-(aclosure ac "opsem" "conversion" i :stage "type" :value e
+(aclosure ac "opsem::any" "conversion" i :stage "type" :value e
     :ap i "type" t :do
-    (update-push-aclosure ac :av "stage" "access" :av "expression" e)
-    (clear-update-eval-aclosure ac "instance" "type")
+    (update-push-aclosure ac :stage "access" :av "expression" e)
+    (clear-update-eval-aclosure ac :instance t)
 )
-(aclosure ac "opsem" "conversion" i :stage "access" :value t
+(aclosure ac "opsem::any" "conversion" i :stage "access" :value t
     :ap ac "expression" e :do
     ; Собственно приведение типа
     ; TODO
@@ -109,16 +180,16 @@
 )
 
 (alcosure ac "opsem::lvalue" "index expr" i :stage nil :ap i "list" l :do
-    (update-push-aclosure ac "stage" "index calc")
-    (clear-update-eval-aclosure ac "instance" l)
+    (update-push-aclosure ac :stage "index evaluation")
+    (clear-update-eval-aclosure ac :instance l)
 )
-(alcosure ac "opsem::lvalue" "index expr" i :stage "index calc" :value l :ap i "index" ind :do
-    (update-push-aclosure ac :av "stage" "access" :av "list" l)
-    (clear-update-eval-aclosure ac "instance" ind)
+(alcosure ac "opsem::lvalue" "index expr" i :stage "index evaluation" :value l :ap i "index" ind :do
+    (update-push-aclosure ac :stage "access" :av "list" l)
+    (clear-update-eval-aclosure ac :attribute "opsem::rvalue" :instance ind)
 )
 (aclosure ac "opsem::lvalue" "index expr" i :stage "access"
-    :agent a :value ind :ap ac "list" l :do
-    ; TODO
+    :value ind :ap ac "list" l :do
+    ; TODO <- array decl
 )
 (aclosure ac "opsem::rvalue" "index expr" i :do ...)  ; TODO
 (aclosure ac "opsem" "slice expr" i :do ...)  ; TODO

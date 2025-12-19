@@ -1,7 +1,7 @@
 #|
 	Model of the Go language
 
-	Last edit: 27/11/2025
+	Last edit: 19/12/2025
 |#
 
 
@@ -17,10 +17,6 @@
 (typedef "bool constant" (enumt "true" "false"))
 (typedef "numeric constant" (uniont int real "complex constant"))
 (mot "complex constant" :at "re" real :at "im" real)
-
-
-;;; Variables
-(mot "variable" :at "value" "identifier")
 
 
 ;;; Types
@@ -55,11 +51,10 @@
 (mot "pointer type" :at "type" "type")
 ;;function types
 (mot "function type" :at "signature" "signature")
-(mot "signature" :at "parameters" "parameters" :at "result" "function result")
-(mot "parameters" :at "declarations" (listt "parameter decl"))
+(mot "signature" :at "parameters" (listt "parameter decl") :at "result" "function result")
 (mot "parameter decl" :at "names" (listt "identifier") :at "type" (uniont "type" "variadic type"))
 (mot "variadic type" :at "type" "type")  ; func f(numbers ...int) -> f(1, 2, 3, 4)
-(typedef "function result" (uniont "parameters" "type"))
+(typedef "function result" (uniont (listt "parameter decl") "type"))
 ; func("parameters") "result"
 ; func(a, b int, z float32) bool
 ; func(int, int, float64) (bool, int) ~ same as func(_, _ int, _ float64) (bool, int)
@@ -105,8 +100,8 @@
 (mot "block"
 	:at "statements" (listt "statement")
 	; semantic attributes
-	:at "variables" (listt "variable")                         ; Все переменные, изменяемые в блоке
-	:at "variable location" (cot :amap "variable" "location")  ; Старые ячейки этих переменных, nil - если не существовали ранее
+	:at "variables" (listt "identifier")                         ; Все переменные, изменяемые в блоке
+	:at "variable location" (cot :amap "identifier" "location")  ; Старые ячейки этих переменных, nil - если не существовали ранее
 	:at "labels" (listt "label")
 	:at "label position" (cot :amap "label" nat)
 )
@@ -116,7 +111,7 @@
 (typedef "declaration" (uniont "const decl" "type decl" "var decl"))
 (typedef "top level decl" (uniont "declaration" "function decl" "method decl"))
 ;;const declarations
-(mot "const decl" :at "specifications" (listt "const spec"))
+(mot "const decl" :at "specifiers" (listt "const spec"))
 (mot "const spec" :at "names" (listt "identifier") :at "type" "type" :at "initializers" (listt "expression"))
 ; const (
 ; 	size int64 = 1024
@@ -151,8 +146,7 @@
 (mot "short var decl" :at "names" (listt "identifier") :at "expressions" (listt "expression"))
 ; f := func() int { return 7 }
 ;;function declarations
-(mot "function decl" :at "name" "identifier" :at "type parameters" "type parameters" :at "signature" "signature" :at "body" "function body")
-(mot "function body" :at "block" "block")
+(mot "function decl" :at "name" "identifier" :at "type parameters" "type parameters" :at "signature" "signature" :at "body" "block")
 ; func min[T ~int|~float64](x, y T) T {
 ; 	if x < y {
 ; 		return x
@@ -160,7 +154,7 @@
 ; 	return y
 ; }
 ;;method declarations
-(mot "method decl" :at "reciever" "parameters" :at "name" "identifier" :at "signature" "signature" :at "body" "function body")
+(mot "method decl" :at "reciever" (listt "parameter decl") :at "name" "identifier" :at "signature" "signature" :at "body" "block")
 ; func (p *Point) Scale(factor float64) {
 ; 	p.x *= factor
 ; 	p.y *= factor
@@ -358,10 +352,9 @@
 
 ;;; External definitions
 (mot "translation unit" :at "declarations" (listt "external declaration"))
-(typedef "external declaration" (uniont "function definition" "declaration"))
-(mot "function definition" :at "signature" "signature" :at "body" "block")
+(typedef "external declaration" (uniont "function literal" "declaration"))
 
 
 ;;; Semantics constructs
-(mot "location")
-(typedef "Go value" (uniont "constant" "location" "function body"))  ; "variable" | "array" "struct"...
+(mot "location" :at "type" "type" :at "value" "Go value")
+(typedef "Go value" (uniont "constant" "location" "function literal"))

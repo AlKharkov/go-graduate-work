@@ -2,10 +2,15 @@
 Literal type = "[" "..." "]" ElementType
 Type assertions
 ^1  - буду разбираться что это и зачем
-
+declarations: каждое значение должно быть явно указано (в том числе без iota)
+declarations: типы обязательно указывать
+interfaces
+templates
+function decl -> type parameters
+function decl -> signature -> result -> parameter decl
 
 ## The rules of good form
-1. Explicitly specify the nil stage in closures whose calculation depends on this attribute
+1. Явно указывать стадию nil, если используются другие стадии
 
 
 ## In order not to forget
@@ -14,8 +19,17 @@ Type assertions
 3. Statements ничего не возвращают, в отличие от expressions
 4. math.Sin -> (mo "variable" :av "name" "math.Sin")
 5. Указатель на переменную 
+6. const spec: (length names) == (length inits)
 
 
 ## Questions
-1. Как хранить ссылки? Оператор разыменования
-2. Показать экран с кодом expressions. Что-то мало похоже на читабельный код, наверное лучше вернуть match
+1. Проверить декларации
+
+
+## Улучшения
+1. Отделить константы от переменных (в агента добавить новое отношение)
+
+
+## Предложения к синтаксису
+1. aclosure желательные атрибуты :attribute :type :instance
+2. (aset ac :attribute :type :instance :stage :agent :value ...)
