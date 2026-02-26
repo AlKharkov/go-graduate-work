@@ -1,19 +1,16 @@
 #|
 	Model of the Go language
 
-	Last edit: 19/12/2025
+	Last edit: 21/02/2026
 |#
 
 
-;;; Lexical elements
-(typedef "comment" (uniont "line comment" "general comment"))
-(mot "line comment" :at "text" string)     ; // single-line comment
-(mot "general comment" :at "text" string)  ; /* multi-line comment */
-(typedef "identifier" (uniont string))     ; a | _x9 | ThisVariableIsExported | αβ
+;;; Identifiers
+(typedef "identifier" (uniont string))
 
 
 ;;; Constants
-(typedef "constant" (uniont "bool constant" "numeric constant" string))
+(typedef "constant" (uniont "bool constant" "numeric constant" string symbol))
 (typedef "bool constant" (enumt "true" "false"))
 (typedef "numeric constant" (uniont int real "complex constant"))
 (mot "complex constant" :at "re" real :at "im" real)
@@ -21,73 +18,36 @@
 
 ;;; Types
 (typedef "type" (uniont "base type" "composite type"))
-(typedef "base type" (uniont "boolean type" "numeric type" "string type" "rune type"))
+(typedef "base type" (uniont "boolean type" "numeric type" "rune type" "string type"))
 (typedef "boolean type" (enumt "bool"))
-(typedef "numeric type" (uniont "real-valued type" "complex type" "byte type"))
-(typedef "real-valued type" (enumt "int type" "float type"))
+(typedef "numeric type" (uniont "int type" "float type" "complex type"))
 (typedef "int type" (uniont "signed int type" "unsigned int type"))
 (typedef "signed int type" (enumt "int" "int8" "int16" "int32" "int64"))
-(typedef "unsigned int type" (enumt "uint" "uint8" "uint16" " uint32" "uint64" "uintptr"))
+(typedef "unsigned int type" (enumt "uint" "uint8" "uint16" " uint32" "uint64" "uintptr" "byte"))
 (typedef "float type" (enumt "float32" "float64"))
-(typedef "complex type" (enumt "complex32" "complex64"))
-(typedef "byte type" (enumt "byte"))      ; <doc> alias for uint8
-(typedef "rune type" (enumt "rune"))      ; 'a' | 'ä' | '本' | '\t' | '\377' | '\U00101234'
-(typedef "string type" (enumt "string"))  ; "string" | `string`
+(typedef "complex type" (enumt "complex64" "complex128"))
+(typedef "rune type" (enumt "rune"))  ; 'a' | '\t' | '本' | '\U00101234'
+(typedef "string type" (enumt "string"))
 ;;composite types
 (typedef "composite type" (uniont "array type" "slice type" "struct type" "pointer type" "function type" "interface type" "map type" "channel type"))
-(mot "array type" :at "len" nat :at "element type" "type")  ; [32]byte | [2][2][2]float64 ~ same as [2]([2]([2]float64))
-(mot "slice type" :at "element type" "type")
-; a := [5]int{1, 2, 3, 4, 5}    // a = [1, 2, 3, 4, 5] - underlying array
-; s := a[1:4]                   // s = [2, 3, 4] - slice
-(mot "struct type" :at "fields" (listt "field decl"))
-(typedef "field decl" (uniont "named field" "embedded field"))
-(mot "named field" :at "name" "identifier" :at "type" "type")
-(mot "embedded field" :at "type" "type")
-; struct {
-; 	x, y int    // named field 
-; 	A *[]int
-;   T           // embedded field
-; }
+(mot "array type" :at "len" nat :at "element type" "type")  ; var a [2]int | [2][2]int ~ [2]([2]int)
+(mot "slice type" :at "element type" "type")  ; var s []int
+(mot "struct type" :at "fields" (cot :amap "identifier" "type"))
 (mot "pointer type" :at "type" "type")
 ;;function types
 (mot "function type" :at "signature" "signature")
-(mot "signature" :at "parameters" (listt "parameter decl") :at "result" "function result")
-(mot "parameter decl" :at "names" (listt "identifier") :at "type" (uniont "type" "variadic type"))
-(mot "variadic type" :at "type" "type")  ; func f(numbers ...int) -> f(1, 2, 3, 4)
-(typedef "function result" (uniont (listt "parameter decl") "type"))
+(mot "signature" :at "parameters" (listt "parameter decl") :at "variadic parameter" "variadic decl" :at "result" "function result")
+(mot "parameter decl" :at "name" "identifier" :at "type" "type")
+(mot "variadic decl" :at "name" "identifier" :at "type" "type")  ; func f(n ...int){}(1, 2, 3)
+(mot "function result" :at "result" (uniont "type" (listt "parameter decl")))
 ; func("parameters") "result"
-; func(a, b int, z float32) bool
-; func(int, int, float64) (bool, int) ~ same as func(_, _ int, _ float64) (bool, int)
-; func(n int) func(p *T)
-;;interface types
-(mot "interface type" :at "elements" (listt "interface elem"))
-(typedef "interface elem" (uniont "method elem" "type elem"))
+; func(a int, b float32) bool
+; func() (x bool, y int)
+(mot "interface type" :at "elements" (listt "method elem"))
 (mot "method elem" :at "name" "identifier" :at "signature" "signature")
-(typedef "type elem" (uniont (listt "type term")))
-(typedef "type term" (uniont "type" "underlying type"))
 ; type A interface {
 ;   f(n int) (q bool)     // method elem: "name" = `f`, "signature" = `(n int) (q bool)`
 ; }
-; type B interface {
-;   A                     // type elem: includes methods of A in B's method set
-;   g(p *int) (a int[]) 
-; }
-; interface {             // An interface representing all types with underlying type int that implement the String method.
-; 	~int
-; 	String() string
-; }
-(mot "underlying type" :at "type" "type")  ; ~Type
-; type (    
-;   // the underlying type of string, A1 and A2 is string
-; 	A1 = string
-; 	A2 = A1
-;
-;   // the underlying type of B1 and B2 is string; the underlying type of []B1, B3 and B4 is []B1
-; 	B1 string
-; 	B2 B1
-; 	B3 []B1
-; 	B4 B3
-; )
 (mot "map type" :at "key type" "type" :at "element type" "type")  ; map[*T]struct{ x, y float64 }
 (mot "channel type" :at "direction" "direction" :at "type" "type")
 (typedef "direction" (enumt "bidirectional" "send" "receive"))
@@ -100,107 +60,67 @@
 (mot "block"
 	:at "statements" (listt "statement")
 	; semantic attributes
-	:at "variables" (listt "identifier")                         ; Все переменные, изменяемые в блоке
-	:at "variable location" (cot :amap "identifier" "location")  ; Старые ячейки этих переменных, nil - если не существовали ранее
-	:at "labels" (listt "label")
-	:at "label position" (cot :amap "label" nat)
+	:at "variable location" (cot :amap "identifier" "location")  ; Старые ячейки иницилизируемых в блоке переменных, nil - если не существовали ранее
+	:at "label position" (cot :amap "label" nat)  ; Позиции встречаемых в блоке меток
 )
 
 
 ;;; Declarations
 (typedef "declaration" (uniont "const decl" "type decl" "var decl"))
-(typedef "top level decl" (uniont "declaration" "function decl" "method decl"))
-;;const declarations
-(mot "const decl" :at "specifiers" (listt "const spec"))
-(mot "const spec" :at "names" (listt "identifier") :at "type" "type" :at "initializers" (listt "expression"))
-; const (
-; 	size int64 = 1024
-; 	eof        = -1       // untyped integer constant
-; )
-;;type declarations
-(typedef "type decl" (uniont (listt (uniont "alias decl" "type def"))))
-(mot "alias decl" :at "name" "identifier" :at "type parameters" "type parameters" :at "type" "type")
-; type (
-; 	nodeList = []*Node    // nodeList and []*Node are identical types
-; 	Polar    = polar      // Polar and polar denote identical types
-; )
-; type set[P comparable] = map[P]bool
-(mot "type def" :at "name" "identifier" :at "type parameters" "type parameters" :at "type" "type")
-; type (
-; 	Point struct{ x, y float64 }    // Point and struct{ x, y float64 } are different types
-; 	polar Point                     // polar and Point denote different types
-; )
-; type TreeNode struct {
-; 	left, right *TreeNode
-; 	value        any
-; }
-(mot "type parameters" :at "param declarations" (listt "type param decl"))
-(mot "type param decl" :at "names" (listt "identifier") :at "type constraint" "type constraint")
-(mot "type constraint" :at "constraints" "type elem")  ; [T1 comparable, T2 any]
-;;var declarations
-(mot "var decl" :at "specifiers" (listt "var spec"))
-(mot "var spec" :at "names" (listt "identifier") :at "type" "type" :at "expressions" (listt "expression"))
-; var U, V, W float64
-; var k = 0
-; var x, y float32 = -1, -2
-(mot "short var decl" :at "names" (listt "identifier") :at "expressions" (listt "expression"))
-; f := func() int { return 7 }
+(mot "const decl" :amap "identifier" "const value")  ; const a int, b int = 1, 2
+(mot "const value" :at "value" "constant" :at "type" "type")
+(mot "type decl" :at "name" "identifier" :at "type" "type")
+; type Point struct{ x bool }  // Point and struct{ x bool } are different types
+(mot "var decl" :amap "identifier" "var value")  ; var x float64 = math.Sin(0)
+(mot "var value" :at "value" "expression" :at "type" "type")
 ;;function declarations
-(mot "function decl" :at "name" "identifier" :at "type parameters" "type parameters" :at "signature" "signature" :at "body" "block")
-; func min[T ~int|~float64](x, y T) T {
-; 	if x < y {
-; 		return x
-; 	}
-; 	return y
+(mot "function decl" :at "name" "identifier" :at "signature" "signature" :at "body" "block")
+; func add(p *Point, q *Point) {
+;   p.x += q.x
 ; }
-;;method declarations
-(mot "method decl" :at "reciever" (listt "parameter decl") :at "name" "identifier" :at "signature" "signature" :at "body" "block")
-; func (p *Point) Scale(factor float64) {
-; 	p.x *= factor
-; 	p.y *= factor
+(mot "method decl" :at "receiver" "parameter decl" :at "name" "identifier" :at "signature" "signature" :at "body" "block")
+; func (p *Point) add(q *Point) {
+; 	p.x += q.x
 ; }
 
 
 ;;; Expressions
 ;;operands
-(typedef "operand" (uniont "literal" "operand[T]" "(expression)"))
+(typedef "operand" (uniont "literal" "(expression)"))
 (typedef "literal" (uniont "constant" "composite literal" "function literal"))
-(mot "composite literal" :at "type" "literal type" :at "value" (listt "keyed element"))  ; It construct new values for structs, arrays, slices, and maps each time they are evaluated
-(mot "keyed element" :at "key" "key" :at "element" "element")
-(typedef "literal type" (uniont "struct type" "array type" "slice type" "map type"))
-(typedef "key" (uniont "field name" "expression" (listt "keyed element")))
-(typedef "element" (uniont "expression" (listt "keyed element")))
-(mot "function literal" :at "signature" "signature" :at "body" "block")  ; func(a, b int, z float64) bool { return a*b < int(z) }
-(mot "operand[T]" :at "name" "identifier" :at "types" (listt "type"))  ; substituting types into a template
+(typedef "composite literal" (uniont "array lit" "slice lit" "struct lit" "map lit"))  ; It construct new values for structs, arrays, slices, and maps
+(mot "array lit" :at "type" "array type" :at "value" (listt "Go value"))
+(mot "slice lit" :at "type" "slice type" :at "value" (listt "Go value"))
+(mot "struct lit" :at "type" "struct type" :at "value" (cot :amap "identifier" "Go value"))
+(mot "map lit" :at "type" "map type" :at "value" (cot :amap "identifier" "Go value"))
+(mot "function literal" :at "signature" "signature" :at "body" "block")  ; func(a int) bool { return a < 0 }
 (mot "(expression)" :at "expression" "expression")
 ;;primary expressions
-(typedef "primary expression" (uniont "operand" "conversion" "method expr" "selector expression" "index expr" "slice expr" "type assertion" "function call"))
-(mot "conversion" :at "type" "type" :at "expression" "expression")  ; (*Point)(p)    // p is converted to *Point
-(mot "method expression" :at "receiver type" "type" :at "name" "identifier")  ; T.Mv
-; type T struct {
-; 	a int
-; }
-; func (tv T) Mv(b int) int { return tv.a + b }    // value receiver
-(mot "selector expression" :at "expression" "primary expression" :at "selector" "identifier")  ; x.id
-(mot "index expr" :at "list" "primary expression" :at "index" "expression")  ; x[e]
+(typedef "primary expression" (uniont "operand" "conversion" "method expr" "selector expr" "index expr" "slice expr" "type assertion" "function call"))
+(mot "conversion" :at "type" "type" :at "expression" "expression")  ; float64(2) == 2.0
+(mot "method expression" :at "receiver type" "type" :at "name" "identifier")
+; type T struct { a int }
+; func (t T) f(b int) int { return t.a + b }
+; var t T = T{a: 2}    // t.f(1) ~ T.f(t, 1)
+(mot "selector expression" :at "expression" "primary expression" :at "selector" "identifier")  ; t.a
+(mot "index expr" :at "list" "primary expression" :at "index" "expression")  ; s[0]
 (mot "slice expr" :at "list" "primary expression" :at "slice" "slice")
-(mot "slice" :at "low" "expression" :at "high" "expression" :at "max" "expression")  ; x[e1 : e2] | x[e1 : e2 : e3]
+(mot "slice" :at "low" "expression" :at "high" "expression" :at "max" "expression")  ; x[low : high : max]
 (mot "type assertion" :at "expression" "primary expression" :at "type" "type")  ; .(Type)
 ; var x interface{} = 7    // x has dynamic type int and value 7
 ; i := x.(int)             // i has type int and value 7
-(mot "function call" :at "function" "primary expression" :at "arguments" (listt "argument"))  ; math.Sin(2)
-(mot "argument" :at "expressions" (listt "expression") :at "type" "type")  ; func f(a, b int, c, d float64)
+(mot "function call" :at "function" (uniont "function lit" "identifier") :at "arguments" (listt "expression") :at "variadic argument" "expression")  ; min(1, 2)
 ;;expressions
 (typedef "expression" (uniont "unary expression" "binary expression"))
 ;;unary expressions
-(typedef "unary expression" (uniont "primary expression" "+1" "-1" "^1" "!1" "*1" "&1" "<-"))
+(typedef "unary expression" (uniont "primary expression" "+1" "-1" "^1" "!1" "*1" "&1" "<-1"))
 (mot "+1" :at 1 "unary expression")  ; +x == x
 (mot "-1" :at 1 "unary expression")  ; -x == -1 * x
 (mot "^1" :at 1 "unary expression")  ; ^10(2) == 01(2)
 (mot "!1" :at 1 "unary expression")  ; !true == false
 (mot "*1" :at 1 "unary expression")
 (mot "&1" :at 1 "unary expression")
-(mot "<-1" :at 1 "unary expression")
+(mot "<-1" :at 1 "unary expression")  ; Pulls the value from the channel 1
 ;;binary expressions
 (typedef "binary expression" (uniont "1||2" "1&&2" "rel expression" "add expression" "mul expression"))
 (mot "1||2" :at 1 "expression" :at 2 "expression")
@@ -213,7 +133,7 @@
 (mot "1<<2" :at 1 "expression" :at 2 "expression")
 (mot "1>>2" :at 1 "expression" :at 2 "expression")
 (mot "1&2" :at 1 "expression" :at 2 "expression")
-(mot "1&^2" :at 1 "expression" :at 2 "expression") ; 11001010(2) &^ 10101100(2) == 01000010(2)    // 1 <=> 1 &^ 0
+(mot "1&^2" :at 1 "expression" :at 2 "expression") ; 1 &^ 2 == 1 & (^2)
 ;;binary addition expressions
 (typedef "add expression" (uniont "1+2" "1-2" "1|2" "1^2"))
 (mot "1+2" :at 1 "expression" :at 2 "expression")
@@ -230,14 +150,13 @@
 (mot "1>2" :at 1 "expression" :at 2 "expression")
 (mot "1>=2" :at 1 "expression" :at 2 "expression")
 
+
 ;;; Statements
-(typedef "statement" (uniont "declaration" "label stmt" "simple stmt" "go stmt" "return stmt" "break stmt" "continue stmt" "goto stmt" "fallthrough stmt" "block" "if stmt" "switch stmt" "select stmt" "for stmt" "defer stmt"))
-(typedef "simple statement" (uniont "empty stmt" "expression stmt" "send stmt" "1++" "1--" "assignment stmt" "short var decl"))
-(typedef "empty stmt")  ; The empty statement does nothing
+(typedef "statement" (uniont "declaration" "labeled stmt" "simple stmt" "go stmt" "return stmt" "break stmt" "continue stmt" "goto stmt" "fallthrough stmt" "block" "if stmt" "switch stmt" "select stmt" "for stmt" "defer stmt"))
 (mot "label stmt" :at "label" "label" :at "statement" "statement")
-(mot "label" :at "name" "identifier")
-; "label": "statement"
-;   Error: log.Panic("error encountered")
+(mot "label" :at "name" "identifier")  ; "label": "statement"
+(typedef "simple stmt" (uniont "empty stmt" "expression stmt" "send stmt" "1++" "1--" "assignment stmt"))
+(typedef "empty stmt")  ; The empty statement does nothing
 (mot "expression stmt" :at "expression" "expression")
 ; h(x+y)
 ; f.Close()
@@ -269,11 +188,10 @@
 (typedef "switch stmt" (uniont "expr switch stmt" "type switch stmt"))
 (mot "expr switch stmt" :at "init" "simple stmt" :at "controlling expression" "expression" :at "cases" (listt "expr case clause"))
 (mot "expr case clause" :at "cases" (uniont (listt "expression") "default") :at "statements" (listt "statement"))
-(mot "default")
-; switch tag {
-; case 0, 1, 2, 3: s1()
-; case 4, 5, 6, 7: s2()
-; default: s3()
+(cot "default")
+; switch a {
+; case 0, 1, 2: f()
+; default: g()
 ; }
 (mot "type switch stmt" :at "init" "simple stmt" :at "guard" "type switch guard" :at "cases" (listt "type case clause"))
 (mot "type switch guard" :at "name" "identifier" :at "variable" "primary expression")
@@ -298,8 +216,9 @@
 ; go func(ch chan<- bool) { for { sleep(10); ch <- true }} (c)
 (mot "select stmt" :at "statement" (listt "common clause"))
 (mot "common clause" :at "case" "common case" :at "statements" (listt "statement"))
-(typedef "common case" (uniont "send stmt" "recive stmt" "default"))
-(mot "recive stmt" :at "names" (uniont (listt "expression") (listt "identifier")) :at "expression" "expression")
+(typedef "common case" (uniont "send stmt" "recive = stmt" "receive := stmt" "default"))
+(mot "receive = stmt" :at "names" (listt "expression") : at "expression" "expression")
+(mot "receive := stmt" :at "names" (listt "identifier") : at "expression" "expression")
 ; func f1(c1 chan int) {
 ; 	a := <-c1
 ; 	c1 <- a
@@ -344,17 +263,13 @@
 
 
 ;;; Packages
+(typedef "top level decl" (uniont "declaration" "function decl" "method decl"))
 (mot "source file" :at "package name" "identifier" :at "import decl" (listt "import package") :at "declarations" (listt "top level decl"))
 ;;import declaration
 (mot "import package" :at "package name" "identifier" :at "path" "path")
 (typedef "path" (uniont string))  ; import m "lib/math"
 
 
-;;; External definitions
-(mot "translation unit" :at "declarations" (listt "external declaration"))
-(typedef "external declaration" (uniont "function literal" "declaration"))
-
-
 ;;; Semantics constructs
 (mot "location" :at "type" "type" :at "value" "Go value")
-(typedef "Go value" (uniont "constant" "location" "function literal"))
+(typedef "Go value" (uniont "literal" "location"))

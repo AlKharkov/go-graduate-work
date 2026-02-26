@@ -1,19 +1,18 @@
 #|
 	Operational semantics for the Go language
 
-    Last edit: 19/12/2025
+    Last edit: 26/02/2026
 |#
 
 
 ;;; Enviroment and Agents
 (mot "env" 
     :at "agents" (listt "agent")
-    :at "target construct" (uniont "expression" "statement" "external declaration" "translation unit")
 )
 (mot "agent"
-    :at "location" (cot :amap "identifier" "location")
-    :at "type name" (cot :amap "type name" "type")
-    :at "value" "Go value"
+    :at "location" (cot :amap "identifier" "location")  ; The relation of names to their memory locations
+    :at "type name" (cot :amap "type name" "type")      ; Types created in the program
+    :at "value" "Go value"                              ; The last value calculated by the agent
 )
 
 
@@ -27,10 +26,46 @@
 
 
 ;;; Types
-(aclosure ac "default type value" "base type" i :do (clear-update-eval-aclosure ac :attribute "opsem::rvalue"))
-(aclosure ac "default type value" "array type" i :do ...) ; TODO...
-(aclosure ac "default type value" "slice type" i :do ...) ; TODO...
-(aclosure ac "default type value" "struct type" i :do ...) ; TODO...
+(aclosure ac "default type value" "boolean type" i :do nil)
+(aclosure ac "default type value" "numeric type" i :do 0)
+(aclosure ac "default type value" "rune type" i :do nil)
+(aclosure ac "default type value" "string type" i :do "")
+(aclosure ac "default type value" "array type" i :stage nil
+    :ap i "len" n :ap i "element type" et :do 
+    (update-push-aclosure ac :stage "start creating list")
+    (clear-update-eval-aclosure ac :instace et)
+)
+(aclosure ac "default type value" "array type" i :stage "start creating list" 
+    :ap i "len" n :value ev :do 
+    (update-push-aclosure ac :stage "exit array type")
+    (clear-update-eval-aclosure ac :stage "creating list" :av "current" (list) :av "left" n :av "element value" ev)
+)
+(aclosure ac "default type value" "array type" i :stage "creating list"
+    :ap ac "current" lst :ap ac "left" k :ap ac "element value" ev :v (> k 0) T :do 
+    (update-eval-aclosure ac :av "current" (cons ev lst) :av "left" (- k 1))
+)
+(aclosure ac "default type value" "array type" i :stage "exit array type" 
+    :value lst :do (mo "array lit" :av "type" i :value lst) ; lst???
+)
+(aclosure ac "default type value" "slice type" i :do (mo "slice lit" :av "type" i :av "value" (list)))
+(aclosure ac "default type value" "struct type" i :stage nil 
+    :ap i "fields" fs :p (attributes fs) ns :p fv (co :amap "identifier" "Go value") :do
+    (update-push-aclosure ac :stage "exit struct type")
+    (match :v (> (length ns) 0) :do
+        (update-push-aclosure ac :stage "adding default value" :av "current" 0 :av "field values" fv)
+        (clear-eval-update-aclosure ac :instance (aget fs (car ns)))
+    )
+)
+(aclosure ac "default type value" "struct type" i :stage "adding default value" 
+    :ap i "fields" fs :p (attributes fs) ns :ap ac "current" p :ap ac "field values" fv :v (< p (length ns)) T :value dv :do 
+    (update-eval-aclosure ac :av "field values" (cons dv fv) :av "current" (+ p 1))
+    (match :v (< (+ p 1) (length ns)) T :do 
+        (clear-update-eval-aclosure ac :instance (aget fs (nth (+ p 1) ns)))
+    )
+)
+(aclosure ac "default type value" "struct type" i :stage "exit array type" 
+    ; ??
+)
 (aclosure ac "default type value" "pointer type" i :do ...) ; TODO...
 (aclosure ac "default type value" "function type" i :do ...) ; TODO...
 (aclosure ac "default type value" "interface type" i :do ...) ; TODO...
@@ -46,7 +81,7 @@
     (clear-update-eval-aclosure ac :stage "iteration" :av "current" 0 :av "bound" (length sts) :av "statements" sts)
 )
 (aclosure ac "opsem" "block" i :stage "iteration"
-    :ap ac "current" p :ap "bound" n :ap ac "statements" sts :v (< p n) T :do
+    :ap ac "current" p :ap ac "bound" n :ap ac "statements" sts :v (< p n) T :do
     (update-push-aclosure ac "current" (+ p 1))
     (clear-update-eval-aclosure ac :instance (nth p sts))
 )
@@ -127,7 +162,7 @@
 (aclosure ac "opsem" "function decl" i :stage nil
     :ap i "name" name :ap i "signature" s :ap i "body" b :agent a :do
     (aset a "location" name (mo "location"
-        :av "value" (mo "function literal" :av "signature" s :av "body" b)
+        :av "value" (mo "function literal" :av "signature" s :av "body" b) ; signature -> "parameters"
         :av "type" ... ; Тип - функция(signature) - function type
         )
     )
@@ -145,10 +180,10 @@
 ;; Operands
 (aclosure ac "opsem" "composite literal" i :do ...)  ; TODO
 (aclosure ac "opsem" "keyed element" i :do i)
-(aclosure ac "opsem" "function literal" i :do ...)  ; TODO
+(aclosure ac "opsem" "function literal" i :do ...)  ; TODO...
 (aclosure ac "opsem" "operand[T]" i :do
     ; Создать новый объект, с подставленным типом
-    ; Limitations prohibit
+    ; Limitations prohibit - предварительно вычисляем
 )
 (aclosure ac "opsem::any" "(expression)" i :ap i "expression" e :do (clear-update-eval-aclosure ac "instance" e))
 ;primary expressions
@@ -215,7 +250,7 @@
 (aclosure ac "opsem::rvalue" "!1" i :stage nil :ap i 1 e :do
     (update-push-aclosure ac "stage" "access")
     (clear-update-eval-aclosure ac "instance" e)
-)
+)   
 (aclosure ac "opsem::rvalue" "!1" i :stage "access" :value e :do (= nil e))
 (aclosure ac "opsem::lvalue" "*1" i :stage nil :ap i 1 e :do
     (update-push-aclosure ac "stage" "access")
