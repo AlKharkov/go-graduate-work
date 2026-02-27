@@ -1,7 +1,7 @@
 #|
 	Model of the Go language
 
-	Last edit: 21/02/2026
+	Last edit: 27/02/2026
 |#
 
 
@@ -35,18 +35,15 @@
 (mot "struct type" :at "fields" (cot :amap "identifier" "type"))
 (mot "pointer type" :at "type" "type")
 ;;function types
-(mot "function type" :at "signature" "signature")
+(mot "function type" :at "type signature" "type signature")
+(mot "type signature" :at "types" (listt "type") :at "variadic type" "type" :at "result" "type")
+(mot "interface type" :at "elements" (cot :amap "identifier" "signature"))
 (mot "signature" :at "parameters" (listt "parameter decl") :at "variadic parameter" "variadic decl" :at "result" "function result")
 (mot "parameter decl" :at "name" "identifier" :at "type" "type")
 (mot "variadic decl" :at "name" "identifier" :at "type" "type")  ; func f(n ...int){}(1, 2, 3)
 (mot "function result" :at "result" (uniont "type" (listt "parameter decl")))
-; func("parameters") "result"
-; func(a int, b float32) bool
-; func() (x bool, y int)
-(mot "interface type" :at "elements" (listt "method elem"))
-(mot "method elem" :at "name" "identifier" :at "signature" "signature")
 ; type A interface {
-;   f(n int) (q bool)     // method elem: "name" = `f`, "signature" = `(n int) (q bool)`
+;   f(n int) (q bool)     // "identifier" = `f`, "signature" = `(n int) (q bool)`
 ; }
 (mot "map type" :at "key type" "type" :at "element type" "type")  ; map[*T]struct{ x, y float64 }
 (mot "channel type" :at "direction" "direction" :at "type" "type")
@@ -87,13 +84,13 @@
 ;;; Expressions
 ;;operands
 (typedef "operand" (uniont "literal" "(expression)"))
-(typedef "literal" (uniont "constant" "composite literal" "function literal"))
+(typedef "literal" (uniont "constant" "composite literal" "function lit"))
 (typedef "composite literal" (uniont "array lit" "slice lit" "struct lit" "map lit"))  ; It construct new values for structs, arrays, slices, and maps
 (mot "array lit" :at "type" "array type" :at "value" (listt "Go value"))
 (mot "slice lit" :at "type" "slice type" :at "value" (listt "Go value"))
 (mot "struct lit" :at "type" "struct type" :at "value" (cot :amap "identifier" "Go value"))
 (mot "map lit" :at "type" "map type" :at "value" (cot :amap "identifier" "Go value"))
-(mot "function literal" :at "signature" "signature" :at "body" "block")  ; func(a int) bool { return a < 0 }
+(mot "function lit" :at "signature" "signature" :at "body" "block")  ; func(a int) bool { return a < 0 }
 (mot "(expression)" :at "expression" "expression")
 ;;primary expressions
 (typedef "primary expression" (uniont "operand" "conversion" "method expr" "selector expr" "index expr" "slice expr" "type assertion" "function call"))

@@ -27,25 +27,30 @@
 
 ;;; Types
 (aclosure ac "default type value" "boolean type" i :do nil)
-(aclosure ac "default type value" "numeric type" i :do 0)
+(aclosure ac "default type value" "int type" i :do 0)
+(aclosure ac "default type value" "float type" i :do 0.0)
+(aclosure ac "default type value" "complex type" i :do (complex 0 0))
 (aclosure ac "default type value" "rune type" i :do nil)
 (aclosure ac "default type value" "string type" i :do "")
 (aclosure ac "default type value" "array type" i :stage nil
     :ap i "len" n :ap i "element type" et :do 
     (update-push-aclosure ac :stage "start creating list")
-    (clear-update-eval-aclosure ac :instace et)
+    (clear-update-eval-aclosure ac :instace et)  ; Вычисляем значение по умолчанию для элемента этого массива
 )
 (aclosure ac "default type value" "array type" i :stage "start creating list" 
     :ap i "len" n :value ev :do 
     (update-push-aclosure ac :stage "exit array type")
-    (clear-update-eval-aclosure ac :stage "creating list" :av "current" (list) :av "left" n :av "element value" ev)
+    (clear-update-eval-aclosure ac :stage "creating list" :av "current" (list) :av "left" n :av "element value" ev)  ; Создать массив из n элементов ev
 )
 (aclosure ac "default type value" "array type" i :stage "creating list"
-    :ap ac "current" lst :ap ac "left" k :ap ac "element value" ev :v (> k 0) T :do 
-    (update-eval-aclosure ac :av "current" (cons ev lst) :av "left" (- k 1))
+    :ap ac "current" lst :ap ac "left" k :ap ac "element value" ev :do 
+    (match (> k 0) T :do 
+        (update-eval-aclosure ac :av "current" (cons ev lst) :av "left" (- k 1))  ; Добавить 1 элемент к массиву
+        :exit lst  ; Если список готов, то вернуть его
+    )
 )
 (aclosure ac "default type value" "array type" i :stage "exit array type" 
-    :value lst :do (mo "array lit" :av "type" i :value lst) ; lst???
+    :value lst :do (mo "array lit" :av "type" i :value lst)
 )
 (aclosure ac "default type value" "slice type" i :do (mo "slice lit" :av "type" i :av "value" (list)))
 (aclosure ac "default type value" "struct type" i :stage nil 
@@ -53,49 +58,53 @@
     (update-push-aclosure ac :stage "exit struct type")
     (match :v (> (length ns) 0) :do
         (update-push-aclosure ac :stage "adding default value" :av "current" 0 :av "field values" fv)
-        (clear-eval-update-aclosure ac :instance (aget fs (car ns)))
+        (clear-update-eval-aclosure ac :instance (aget fs (car ns)))
     )
 )
 (aclosure ac "default type value" "struct type" i :stage "adding default value" 
     :ap i "fields" fs :p (attributes fs) ns :ap ac "current" p :ap ac "field values" fv :v (< p (length ns)) T :value dv :do 
-    (update-eval-aclosure ac :av "field values" (cons dv fv) :av "current" (+ p 1))
+    (aset fv (nth p ns) dv)  ; Добавляем значение нового поля
+    (update-eval-aclosure ac :av "field values" fv :av "current" (+ p 1))  ; Шаг итерации
     (match :v (< (+ p 1) (length ns)) T :do 
-        (clear-update-eval-aclosure ac :instance (aget fs (nth (+ p 1) ns)))
+        (clear-update-eval-aclosure ac :instance (aget fs (nth (+ p 1) ns)))  ; Вычисляем значение по умолчанию для следующего поля
+        :exit fv  ; Если все поля готовы, то вернуть
     )
 )
 (aclosure ac "default type value" "struct type" i :stage "exit array type" 
-    ; ??
+    :value fv :do (mo "struct lit" :av "type" i :av "value" fv)
 )
-(aclosure ac "default type value" "pointer type" i :do ...) ; TODO...
-(aclosure ac "default type value" "function type" i :do ...) ; TODO...
-(aclosure ac "default type value" "interface type" i :do ...) ; TODO...
-(aclosure ac "default type value" "underlying type" i :do ...) ; TODO...
-(aclosure ac "default type value" "map type" i :do ...) ; TODO...
-(aclosure ac "default type value" "channel type" i :do ...) ; TODO...
+(aclosure ac "default type value" "pointer type" i :do nil)
+(aclosure ac "default type value" "function type" i :stage nil :do 
+    (update-push-aclosure ac :stage "exit function type")
+    (clear-update-eval-aclosure ac :type "body")  ; Для независимой реализации значения по умолчанию блока
+)
+(aclosure ac "default type value" "function type" i :stage "exit function type" :value bd :do
+    (clear-update-eval-aclosure ac (mo "function lit" :at "signature" (aget i "signature") :at "body" bd))
+)
+(aclosure ac "default type value" "interface type" i :do i)  ; Интерфейс сам по себе является как классом, так и единственным его представителем
+(aclosure ac "default type value" "map type" i :do (mo "map lit" :av "type" i :av "value" (cot :amap "identifier" "Go value")))
+(aclosure ac "default type value" "channel type" i :do nil)
+
+(aclosure ac "default type value" "body" :do 
+    (mo "body" :av "statements" (list) :av "variable location" (cot :amap "identifier" "location") :av "label position" (cot :amap "label" nat))
+)
 
 
 ;;; Blocks
 (aclosure ac "opsem" "block" i :stage nil
-    :ap i "statements" sts :do
-    (update-push-aclosure ac :stage "exit block")
-    (clear-update-eval-aclosure ac :stage "iteration" :av "current" 0 :av "bound" (length sts) :av "statements" sts)
+    :ap i "statements" sts :ap i "variable location" vl :p (attributes vl) ns :do
+    (update-push-aclosure ac :stage "variable handling" :av "current" 0 :av "bound" (length ns) :av "variable location" vl :av "names" ns)
+    (clear-update-eval-aclosure ac :stage "evaluating statement" :av "current" 0 :av "bound" (length sts) :av "statements" sts)
 )
-(aclosure ac "opsem" "block" i :stage "iteration"
+(aclosure ac "opsem" "block" i :stage "evaluating statement"
     :ap ac "current" p :ap ac "bound" n :ap ac "statements" sts :v (< p n) T :do
     (update-push-aclosure ac "current" (+ p 1))
     (clear-update-eval-aclosure ac :instance (nth p sts))
 )
-(aclosure ac "opsem" "block" i :stage "exit block"
-    :av i "variables" vs :do
-    (clear-update-eval-aclosure ac :stage "variable handling" :av "variables" vs)
-)
 (aclosure ac "opsem" "block" i :stage "variable handling" :agent a
-    :ap i "variables" vs :v (not (empty vs)) T :p (nth 0 vs) v :p (aget i "variable location" v) vl :do
-    (update-push-aclosure ac "variables" (cdr vs))
-    ; TODO
-    ; Удалить a["variable location"][v]
-    ; Если не nil, то:
-    ;   Создать a["variable location"].add(v, vl)
+    :ap ac "current" p :ap ac "bound" n :ap ac "variable location" vl :ap "names" ns :v (< p n) T :do 
+    (aset a "location" (nth p ns) (nth p vl))  ; Возвращаем прежнее значение переменной
+    (clear-update-eval-aclosure ac "current" (+ p 1))
 )
 
 

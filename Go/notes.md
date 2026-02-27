@@ -20,12 +20,26 @@
 1. byte alias for uint8
 1. Имена функций уникальны
 1. switch {} -> switch true {}
+1. !TODO добавить ссылку на пример использования каналов в конце "statements"
 
 
 ## Questions
 1. Спросить про работу :amap и как правильно писать для "block" и "const decl"
 1. Правильно ли я понимаю, что лучше усложнить лексический парсер, но облегчить модель языка и операционную семантику? Например, пусть все поля в struct, map, array, slice явно имеют своё имя
 1. (cot "default")
+
+1. Можно ли тип добавить к выражениям(нет, нельзя)
+1. Убрать short var decl, сделать обработку в opsem
+1. signature -> type -> listt type
+1. literals value -> literal
+1. Method expression распистаь словами
+1. Переимновать поля slice expression, selector expression; list -> arr
+1. slice и slice expr лишние сущности
+1. type assertion
+1. function call убрать variadic argument
+1. Statemtns -> операторы
+1. labels
+
 
 ## Улучшения
 1. В статье расписать ограничения
