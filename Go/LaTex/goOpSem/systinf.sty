@@ -1,0 +1,330 @@
+
+
+%\usepackage[cp1251]{inputenc} % кодировка кириллицы в файле
+\usepackage[T2A]{fontenc}    % кодировка кириллицы внутри TeXа
+
+
+\def\No{\char'116 ~}
+\headheight 10mm
+\headsep 10mm 
+
+
+
+\setlength{\topmargin}{0pt}
+\setlength{\textwidth}{170mm}
+\setlength{\textheight}{245mm}
+\setlength{\evensidemargin}{15mm}
+\setlength{\oddsidemargin}{15mm}
+\setlength{\marginparsep}{0mm}
+\setlength{\marginparwidth}{0mm}
+\addtolength{\hoffset}{-1in}
+\addtolength{\hoffset}{2mm}
+\addtolength{\voffset}{-1.5in}
+\addtolength{\voffset}{17mm}
+%\pagestyle{empty}
+%\def\bibname{\normalsize Список литературы}%
+%\def\refname{\normalsize Список литературы}%
+
+
+
+
+\renewcommand{\baselinestretch}{1.5}
+\parindent 0.53cm
+\itemsep 0pt
+
+\def\@normalsize{\@setsize\normalsize{12pt}\xpt\@xpt
+\abovedisplayskip 4pt plus1pt minus1pt\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus3pt\belowdisplayshortskip 6pt plus1pt
+minus1pt\let\@listi\@listI}
+\def\small{\@setsize\small{11pt}\ixpt\@ixpt
+\abovedisplayskip 4pt plus 1pt minus 1pt\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus2pt\belowdisplayshortskip 6pt plus1pt minus 1pt
+\def\@listi{\leftmargin\leftmargini \topsep 0pt plus 1pt minus 1pt\parsep 0pt
+plus 1pt minus 1pt
+\itemsep \parsep}}
+\def\footnotesize{\@setsize\footnotesize{9.5pt}\viiipt\@viiipt
+\abovedisplayskip 4pt plus 1pt minus 1pt\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus 1pt\belowdisplayshortskip 6pt plus 1pt minus
+1pt
+\def\@listi{\leftmargin\leftmargini \topsep 3pt plus 1pt minus 1pt\parsep 2pt
+plus 1pt minus 1pt
+\itemsep \parsep}}
+
+\leftmargini 30pt
+\leftmarginii 22pt \leftmarginiii 18.7pt \leftmarginiv 17pt \leftmarginv 10pt
+\leftmarginvi 10pt
+\leftmargin\leftmargini
+\labelsep 3pt
+\labelwidth\leftmargini\advance\labelwidth-\labelsep
+\def\@listI{\leftmargin\leftmargini \parsep 0pt \topsep 0pt
+\itemsep 0pt }
+\let\@listi\@listI
+\@listi
+\def\@listii{\leftmargin\leftmarginii
+ \labelwidth\leftmarginii\advance\labelwidth-\labelsep
+ \topsep 0pt
+ \parsep 0pt
+ \itemsep \parsep}
+\def\@listiii{\leftmargin\leftmarginiii
+ \labelwidth\leftmarginiii\advance\labelwidth-\labelsep
+ \topsep 0pt \parsep \z@ \partopsep 0pt
+ \itemsep \topsep}
+\def\@listiv{\leftmargin\leftmarginiv
+ \labelwidth\leftmarginiv\advance\labelwidth-\labelsep}
+\def\@listv{\leftmargin\leftmarginv
+ \labelwidth\leftmarginv\advance\labelwidth-\labelsep}
+\def\@listvi{\leftmargin\leftmarginvi
+ \labelwidth\leftmarginvi\advance\labelwidth-\labelsep}
+
+
+
+\@twosidetrue
+
+\def\comment{}
+
+\def\ps@firstpagestyle{
+ \def\@oddhead{}
+ \def\@oddfoot{\mbox{\footnotesize  \comment} \hfill \null}
+ \def\@evenhead{}
+ \def\@evenfoot{}
+}
+
+\long\def\@caption#1[#2]#3{\par\addcontentsline{\csname
+  ext@#1\endcsname}{#1}{\protect\numberline{\csname
+  the#1\endcsname}{\ignorespaces #2}}\begingroup
+    \@parboxrestore \newcommand{\ty}{\csname ftype@\@captype\endcsname}
+    \normalsize\ifnum\ty=2
+    \@makecaptiontab{\csname fnum@#1\endcsname}{\ignorespaces #3}\par
+     \else
+    \@makecaptionfig{\csname fnum@#1\endcsname}{\ignorespaces #3}\par
+     \fi
+  \endgroup}
+
+
+\long\def\@makecaptionfig#1#2{
+ \vskip 10pt
+ \small
+ \centering
+ \setbox\@tempboxa\hbox{{\it #1.} #2}
+ \ifdim \wd\@tempboxa >\hsize {\it #1. #2}\par \else \hbox
+to\hsize{\hfil\box\@tempboxa\hfil}
+ \vspace{-4pt}
+ \fi\normalsize\rm}
+
+\long\def\@makecaptiontab#1#2{
+ \vskip 6pt\small
+ \hbox to\hsize{\hfill\ #1}\par
+\vskip 10pt
+\hbox to \hsize{\hfill\bf #2\hfill}
+ \vspace{6pt}}
+
+
+
+
+\newcommand{\UDK}[1]{\large{УДК \udk{#1}}}
+
+\def\maketitle{\par
+ \begingroup
+ \def\thefootnote{\fnsymbol{footnote}}
+ \def\@makefnmark{\hbox
+ to 0pt{$^{\@thefnmark}$\hss}}
+ \if@twocolumn
+ \twocolumn[\@maketitle]
+ \else \newpage
+ \global\@topnum\z@ \@maketitle \fi\@thanks
+ \endgroup
+ \setcounter{footnote}{0}
+ \let\maketitle\relax
+ \let\@maketitle\relax
+ \gdef\@thanks{}\gdef\@author{}\gdef\@title{}\let\thanks\relax}
+\def\@maketitle{\newpage
+ \null
+ \mbox{}\vspace{-18mm}\\
+ \noindent\UDK{}
+ \vskip 12pt
+
+ \begin{center}
+
+    \textbf{ {\Large\@title}} \par
+     \vskip 12pt
+   {\large\it  \@author
+    \par
+   }
+   \vskip 12pt
+
+  %%%% \vskip 1em {\large \@date} \par
+\end{center}
+
+}
+
+
+\renewenvironment{abstract}{\begin{center}\begin{minipage}{150mm}\parindent=0.53cm\fontsize{11}{12}\selectfont}{\end{minipage}\bigskip\end{center}}
+
+\def\thesection {\arabic{section}.}
+\def\thesubsection {\thesection\arabic{subsection}.}
+\def\thesubsubsection {\thesubsection\arabic{subsubsection}.}
+\def\theparagraph {\thesubsubsection.\arabic{paragraph}}
+\def\thesubparagraph {\theparagraph\arabic{subparagraph}.}
+
+\def\@startsection#1#2#3#4#5#6{\if@noskipsec \leavevmode \fi
+   \par \@tempskipa #4\relax
+   \@afterindenttrue
+   \if@nobreak \everypar{}\else
+     \addpenalty{\@secpenalty}\addvspace{\@tempskipa}\fi \@ifstar
+     {\@ssect{#1}{#3}{#4}{#5}{#6}}{\@dblarg{\@sect{#1}{#2}{#3}{#4}{#5}{#6}}}}
+\def\@sect#1#2#3#4#5#6[#7]#8{\ifnum #2>\c@secnumdepth
+     \def\@svsec{}\else
+     \refstepcounter{#1}\edef\@svsec{\csname the#1\endcsname \hskip 5pt}\fi
+     \@tempskipa #5\relax
+      \ifdim \@tempskipa>\z@
+        \begin{center}
+        \begingroup #6\relax
+          \@hangfrom{\hskip #3\relax\@svsec}{\interlinepenalty \@M {#8}\par}%
+        \endgroup
+        \end{center}
+       \csname #1mark\endcsname{#7}\addcontentsline
+         {toc}{#1}{\ifnum #2>\c@secnumdepth \else
+                      \protect\numberline{\csname the#1\endcsname.}\fi
+                    #7}\else
+        \def\@svsechd{#6\hskip #3\@svsec #8\csname #1mark\endcsname
+                      {#7}\addcontentsline
+                           {toc}{#1}{\ifnum #2>\c@secnumdepth \else
+                             \protect\numberline{\csname the#1\endcsname.}\fi
+                       #7}}\fi
+      \@xsect{#5}
+}
+\def\@ssect#1#2#3#4#5#6{\@tempskipa #3\relax
+   \ifdim \@tempskipa>\z@
+     \begin{center}
+     \begingroup #5\@hangfrom{\hskip #2}{\interlinepenalty \@M {#6}\par}\endgroup
+     \end{center}
+      \csname #1mark\endcsname{}
+   \else \def\@svsechd{#5\hskip #2\relax #6}\fi
+   \addcontentsline{toc}{#1}{#6}
+    \@xsect{#4}
+}
+
+\def\subsection{
+ \@startsection{subsection}{1}{\z@}{6pt}
+ {6pt}{\large\bf}}
+
+\def\subsubsection{
+ \@startsection{subsubsection}{1}{\z@}{6pt}
+ {6pt}{\normalsize\bf}}
+
+\def\figurename{Рис.}
+\def\refname{{Список литературы}}
+\def\bibname{{Список литературы}}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%FONTS
+
+\def\loadmsbm{%
+ \font@\tenmsb=msbm10 \font@\sevenmsb=msbm7 \font@\fivemsb=msbm5
+ \alloc@@8\fam\chardef\sixt@@n\msbfam
+ \textfont\msbfam=\tenmsb
+ \scriptfont\msbfam=\sevenmsb \scriptscriptfont\msbfam=\fivemsb
+ \global\let\loadmsbm\empty
+ }
+\def\Bbb{\RIfM@\expandafter\Bbb@\else
+ \expandafter\nonmatherr@\expandafter\Bbb\fi}
+\def\Bbb@#1{{\Bbb@@{#1}}}
+\def\Bbb@@#1{\noaccents@\fam\msbfam\relax#1}
+
+
+
+
+% Changes by Andrew Cadach
+
+% Section number, etc. shall be followed by dot, but referenced well
+\def\thesection {\arabic{section}}
+\def\thesubsection {\thesection.\arabic{subsection}}
+\def\thesubsubsection {\thesubsection.\arabic{subsubsection}}
+\def\theparagraph {\thesubsubsection.\arabic{paragraph}}
+\def\thesubparagraph {\theparagraph.\arabic{subparagraph}}
+
+\def\@sect#1#2#3#4#5#6[#7]#8{\ifnum #2>\c@secnumdepth
+     \def\@svsec{}\else
+     \refstepcounter{#1}\edef\@svsec{\csname the#1\endcsname. \hskip 5pt}\fi
+     \@tempskipa #5\relax
+      \ifdim \@tempskipa>\z@
+        \begin{center}
+        \begingroup #6\relax
+          \@hangfrom{\hskip #3\relax\@svsec}{\interlinepenalty \@M {#8}\par}%
+        \endgroup
+        \end{center}
+       \csname #1mark\endcsname{#7}\addcontentsline
+         {toc}{#1}{\ifnum #2>\c@secnumdepth \else
+                      \protect\numberline{\csname the#1\endcsname.}\fi
+                    #7}\else
+        \def\@svsechd{#6\hskip #3\@svsec #8\csname #1mark\endcsname
+                      {#7}\addcontentsline
+                           {toc}{#1}{\ifnum #2>\c@secnumdepth \else
+                             \protect\numberline{\csname the#1\endcsname.}\fi
+                       #7}}\fi
+      \@xsect{#5}
+}
+
+% Section name shall be in upper case
+\def\@@section{
+ \@startsection{section}{1}{\z@}{6pt}
+ {6pt}{\large\bf}}
+\def\section{\@ifstar{\@xsections}{\@xsection}}
+\def\@xsections#1{\@@section*{#1}}
+\def\@xsection#1{\@@section{{#1}}}
+
+% Title shall be in upper case
+\def\title#1{\gdef\@title{{\Large\bf #1}}}
+
+% Theorem number shall be followed by dot
+\def\@begintheorem#1#2{\medskip\trivlist \item[\hskip \parindent {\bf #1\ #2.}]\it}
+\def\@opargbegintheorem#1#2#3{\trivlist
+      \item[\hskip \parindent {\bf #1\ #2\ (#3).}]\it}
+\def\@endtheorem{\endtrivlist}
+
+% Bibliography number shall be followed by dot
+\def\@biblabel#1{#1.}
+\def\thebibliography#1{\section*{\refname\@mkboth
+ {\uppercase{\refname}}{\uppercase{\refname}}}\list
+ {\@biblabel{\arabic{enumi}}}{\settowidth\labelwidth{\@biblabel{#1}}\leftmargin\labelwidth
+ \advance\leftmargin\labelsep
+ \usecounter{enumi}}
+ \def\newblock{\hskip .11em plus .33em minus .07em}
+ \sloppy\clubpenalty4000\widowpenalty4000
+ \sfcode`\.=1000\relaxfontsize{11}{12}\selectfont}
+
+% Make macro for multiple citings
+\def\citeindex#1{\@ifundefined{b@#1}
+  {\@warning{Citation `#1' at page \thepage \space undefined} ? }
+  {\csname b@#1\endcsname}}
+
+% define definition, theorem, lemma, statement, proff, proved
+
+\def\@thrmcontext{}
+\@ifundefined{thrmcontext}{}{\def\@thrmcontext{[\thrmcontext]}}
+
+\newtheorem{definition}{Определение}
+\newtheorem{@statement}{Утверждение}
+\newtheorem{@lemma}{Лемма}
+\newtheorem{@theorem}{Теорема}
+
+\def\@thrmcurrent{@thrmnone}
+\def\@thrmsetlabel[#1]{\label{#1}}
+\def\@thrmbegin#1{
+  \@ifundefined{\@thrmcurrent}
+    {\gdef\@thrmcurrent{#1}\gdef\@thrmend{\end{#1}}}
+    {\@warning{Nested theorems at page \thepage}}
+  \begin{#1}
+  \@ifnextchar[{\@thrmsetlabel}{}
+}
+
+\def\definition{\@thrmbegin{@definition}}
+\def\endefinition{\end{\@definition}}
+
+\def\statement{\@thrmbegin{@statement}}
+\def\lemma{\@thrmbegin{@lemma}}
+\def\theorem{\@thrmbegin{@theorem}}
+
+
