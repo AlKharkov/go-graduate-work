@@ -1,8 +1,204 @@
 #|
 	Operational semantics for the Go language
 
-    Last edit: 26/02/2026
+    Last edit: 27/03/2026
 |#
+
+; ; Quest 1
+; (mot "someType" :at "value" (listt "T"))  ; Некоторый абстрактный тип, атрибутом которого является список
+; (alcosure ac :attribute "test" :type "someType" :instance i :stage nil :do
+;     (update-push-aclosure ac :stage "exit")
+;     (clear-update-eval-aclosure ac :instance (aget i "value"))
+; )
+; (aclosure ac :attribute "test" :type (listt "T") :instance i :do  ; 1) Можно ли тип (listt "T") указывать?
+;     (setf (nth 0 i) "current")  ; 2) Это изменит только локально или в следующем замыкании оно будет изменённое(см. вопрос ниже)?
+; )
+; (alcosure ac :attribute "test" :type "someType" :instance i :stage "exit" :do
+;     ; 2) Будет ли тут тоже (nth 0 (aget i "value")) == "current"?
+; )
+
+
+;;; Type substitution
+
+
+; Quest 2: (nil nil 1 1 1 nil nil 2 3 4) -> 
+;       -> ( 1   1  1 1 1  2   2  2 3 4), где 1, 2, 3, 4 - некоторые типы
+;
+; func(a, b, c int, d float64, e, f bool) - "реальный" пример
+; func(a int, b int, c int, d float64, e bool, f bool)
+;variant 1 (возвращает изменённый массив)
+; Проходит список с конца, запоминая последнее не-nil значение. Если встречает nil, то заменяет его на запомненное.
+(aclosure ac :attribute "type substitution" :type (listt "type") :instance i :do
+    (let ((reversed-list (reverse i)) (last-non-nil nil) (result nil))
+    (dolist (e reversed-list)
+        (if (null e) (push last-non-nil result)
+            (progn (setq last-non-nil e) (push last-non-nil result))))
+    result)
+)
+;variant 2 (изменяет исходный массив)
+(aclosure ac :attribute "type substitution" :type (listt "type") :instance i :do
+    (let ((last-non-nil nil)) 
+        (loop for k from (1- (length i)) downto 0 do 
+            (let ((item (nth k i))) (if item 
+                (setf last-non-nil item) 
+                (setf (nth k i) last-non-nil)))) 
+    i)
+)
+;variant 3 (ABML-подход?)
+(aclosure ac :attribute "type substitution" :type (listt "type") :instance i :stage nil :do
+    (update-push-aclosure ac :stage "exit (listt 'type')")
+    (clear-update-eval-aclosure ac :stage "iterating" :av "current" nil :av "left" (reverse i) :av "last non nil" nil)
+)
+(aclosure ac :attribute "type substitution" :type (listt "type") :instance i :stage "iterating" 
+    :ap ac "current" cur :ap ac "left" left :ap ac "last non nil" v :do 
+    (match :v (null left) T :do cur
+        :exit (match :v (car left) nil 
+            :do (clear-update-eval-aclosure ac :av "current" (cons v cur) :av "left" (cdr left) :av "last non nil" v)
+            :exit (clear-update-eval-aclosure ac 
+                :av "current" (cons (car left) cur) :av "left" (cdr left) :av "last non nil" (car left))
+        )
+    )
+)
+(aclosure ac :attribute "type substitution" :type (listt "type") :instance i :stage "exit (listt 'type')" :value v :do v)
+;END variants
+
+
+
+(aclosure ac :attribute "type substitution" :type (listt "parameter decl") :instance i :p (reverse i) ri :do 
+    (match :v (null i) T 
+        :do i
+        :exit (update-push-aclosure ac :stage "substituting parameters" :av "current" nil :av "left" ri)
+        (clear-update-eval-aclosure ac :instance (car ri))
+    )
+)
+(aclosure ac :attribute "type substitution" :type (listt "parameter decl") :instance i :stage "substituting parameters" 
+    :ap ac "current" lst :ap ac "left" left :value now :do 
+    (match :v (null left) T 
+        :do (append now lst) 
+        :exit (update-push-aclosure ac :av "current" (append now lst) :av "left" (cdr left)) 
+        (clear-update-eval-aclosure ac :instance (car left))
+    )
+)
+; "parameter decl" -> (listt "single param decl")
+(aclosure ac :attribute "type substitution" :type "single param decl" :instance i :do (list i))
+
+(aclosure ac :attribute "type substitution" :type "multi param decl" :instance i :stage nil :do
+    (clear-update-eval-aclosure ac :stage "creating singles" :av "current" nil :av "left" (reverse (aget i "names")))
+)
+(aclosure ac :attribute "type substitution" :type "multi param decl" :instance i :stage "creating singles" 
+    :ap ac "current" lst :ap ac "left" left :ap i "type" tp :do 
+    (match :v (null left) T 
+        :do lst 
+        :exit (clear-update-eval-aclosure ac 
+            :av "current" (cons (mo "single param decl" :av "name" (car left) :av "type" tp) lst) 
+            :av "left" (cdr left))
+    )
+)
+
+(aclosure ac :attribute "type substitution" :type "signature" :instance i :stage nil :do 
+    (update-push-aclosure ac :stage "substituting result")
+    (clear-update-eval-aclosure ac :instance (aget i "parameters"))
+)
+(aclosure ac :attribute "type substitution" :type "signature" :instance i :stage "substituting result" 
+    :value ps :do 
+    (update-push-aclosure ac :stage "exit signature" :av "parameters" ps)
+    (clear-update-eval-aclosure ac :instance result)
+)
+(aclosure ac :attribute "type substitution" :type "signature" :instance i :stage "exit signature" 
+    :ap ac "parameters" ps :value r :do 
+    (mo "signature" :av "parameters" ps :av "variadic parameter" (aget i "variadic parameter") :av "result" r)
+)
+
+(aclosure ac :attribute "type substitution" :type "function lit" :instance i :stage nil :do
+    (update-push-aclosure ac :stage "exit function lit")
+    (clear-update-eval-aclosure ac :instance (aget i "signature"))
+)
+(aclosure ac :attribute "type substitution" :type "function lit" :instance i :stage "exit function lit" :value sgn :do 
+    (mo "function lit" :av "signature" sgn :av "body" (aget i "body"))
+)
+
+(aclosure ac :attribute "type substitution" :type "var decl" :instance i :stage nil :do 
+    (update-push-aclosure ac :stage "exit var decl")
+    (clear-update-eval-aclosure ac :instance (aget i "types"))
+)
+(aclosure ac :attribute "type substitution" :type "var decl" :instance i :stage "exit var decl" :value ts :do 
+    (mo "var decl" :av "names" (aget i "names") :av "types" ts :av "values" (aget i "values"))
+)
+
+
+;;; default type by value
+(aclosure ac :attribute "default type by value" :type int :do (mo "int type"))
+(aclosure ac :attribute "default type by value" :type real :do (mo "float type"))
+(aclosure ac :attribute "default type by value" :type "true" :do (mo "bool type"))
+(aclosure ac :attribute "default type by value" :type "false" :do (mo "bool type"))
+(aclosure ac :attribute "default type by value" :type string :do (mo "string type"))
+(aclosure ac :attribute "default type by value" :type "complex constant" :do (mo "complex type"))
+(aclosure ac :attribute "default type by value" :type "array lit" :instance i :do (aget i "type"))
+(aclosure ac :attribute "default type by value" :type "slice lit" :instance i :do (aget i "type"))
+(aclosure ac :attribute "default type by value" :type "struct lit" :instance i :do (aget i "type"))
+(aclosure ac :attribute "default type by value" :type "map lit" :instance i :do (aget i "type"))
+
+(aclosure ac :attribute "default type by value" :type "function lit" :instance i :stage nil :do
+    (update-push-aclosure ac :stage "exit function lit")
+    (clear-update-eval-aclosure ac :instance (aget i "signature"))
+)
+(aclosure ac :attribute "default type by value" :type "function lit" :instance i :stage "exit function lit"
+    :value tsgn :do (mo "function type" :at "signature" tsgn)
+)
+
+(aclosure ac :attribute "default type by value" :type "signature" :instance i :stage nil 
+    :ap i "parameters" psraw :p (reverse psraw) rps :p nil ps 
+    :ap i "result" rraw :p (reverse rraw) rr :p nil r 
+    :ap i "variadic parameter" vpraw :p nil vp :do
+    (dolist (item rps) (push (aget item "type") ps))  ; Собираем только типы параметров
+    (when (and rr (is-instance (car rr) "parameter decl"))
+        (dolist (item rr) (push (aget item "type") r))  ; Обрабатываем результат фукнции
+    )
+    (when vpraw (setq vp (aget vpraw "type")))  ; Обрабатываем вариационный параметр
+    (mo "type signature" :av "types" ps :av "variadic type" vp :av "result" r)
+)
+
+(aclosure ac :attribute "default type by value" :type "function lit" :instance i :do (aget i "type"))
+
+
+;;; default value by type
+(aclosure ac :attribute "default value by type" :type "boolean type" i :do nil)
+(aclosure ac :attribute "default value by type" :type "int type" i :do 0)
+(aclosure ac :attribute "default value by type" :type "float type" i :do 0.0)
+(aclosure ac :attribute "default value by type" :type "complex type" i :do (complex 0 0))
+(aclosure ac :attribute "default value by type" :type "rune type" i :do 0)
+(aclosure ac :attribute "default value by type" :type "string type" i :do "")
+
+(aclosure ac :attribute "default value by type" :type "array type" i :stage nil :do 
+    (update-push-aclosure ac :stage "exit array type")
+    (clear-update-eval-aclosure ac :instace (aget i "element type"))  ; Вычисляем значение по умолчанию для элементов этого массива
+)
+(aclosure ac :attribute "default value by type" :type "array type" i :stage "exit array type" :value tp :do 
+    (make-list (aget i "len") :initial-element tp)
+)
+
+(aclosure ac :attribute "default value by type" :type "slice type" i :do nil)
+
+(aclosure ac :attribute "default value by type" :type "struct type" i :stage nil 
+    :ap i "fields" fs :p (attributes fs) ns :p (co :amap "identifier" "Go value") fv :v (> (length ns) 0) :do 
+    (update-push-aclosure ac :stage "adding default value" :av "current" 0 :av "field values" fv)
+    (clear-update-eval-aclosure ac :instance (aget fs (car ns)))
+)
+(aclosure ac :attribute "default value by type" :type "struct type" i :stage "adding default value" 
+    :ap i "fields" fs :p (attributes fs) ns :ap ac "current" p :ap ac "field values" fv :value default :do 
+    (aset fv (nth p ns) default)  ; Добавляем значение нового поля
+    (update-eval-aclosure ac :av "field values" fv :av "current" (+ p 1))  ; Шаг итерации
+    (match :v (< (+ p 1) (length ns)) T 
+        :do (clear-update-eval-aclosure ac :instance (aget fs (nth (+ p 1) ns)))  ; Вычисляем значение по умолчанию для следующего поля
+        :exit (mo "struct lit" :av "type" i :av "value" fv)  ; Если все поля готовы, то вернуть
+    )
+)
+
+(aclosure ac :attribute "default value by type" :type "pointer type" i :do nil)
+(aclosure ac :attribute "default value by type" :type "function type" i :do nil)
+(aclosure ac :attribute "default value by type" :type "interface type" i :do nil)
+(aclosure ac :attribute "default value by type" :type "map type" i :do nil)
+(aclosure ac :attribute "default value by type" :type "channel type" i :do nil)
 
 
 ;;; Enviroment and Agents
@@ -11,97 +207,30 @@
 )
 (mot "agent"
     :at "location" (cot :amap "identifier" "location")  ; The relation of names to their memory locations
-    :at "type name" (cot :amap "type name" "type")      ; Types created in the program
+    :at "type" (cot :amap "type name" "type")      ; Types created in the program
     :at "value" "Go value"                              ; The last value calculated by the agent
 )
 
 
 ;;; Go values
-(aclosure ac "opsem::rvalue" "Go value" i :do i)
+(aclosure ac :attribute "opsem::rvalue" :type "Go value" i :do i)
 
-
-;;; Variables
-(aclosure ac "opsem::rvalue" "identifier" i :agent a :do (aget (aget a "location" i) "value"))
-(aclosure ac "opsem::lvalue" "identifier" i :agent a :do (aget a "location" i))
-
-
-;;; Types
-(aclosure ac "default type value" "boolean type" i :do nil)
-(aclosure ac "default type value" "int type" i :do 0)
-(aclosure ac "default type value" "float type" i :do 0.0)
-(aclosure ac "default type value" "complex type" i :do (complex 0 0))
-(aclosure ac "default type value" "rune type" i :do nil)
-(aclosure ac "default type value" "string type" i :do "")
-(aclosure ac "default type value" "array type" i :stage nil
-    :ap i "len" n :ap i "element type" et :do 
-    (update-push-aclosure ac :stage "start creating list")
-    (clear-update-eval-aclosure ac :instace et)  ; Вычисляем значение по умолчанию для элемента этого массива
-)
-(aclosure ac "default type value" "array type" i :stage "start creating list" 
-    :ap i "len" n :value ev :do 
-    (update-push-aclosure ac :stage "exit array type")
-    (clear-update-eval-aclosure ac :stage "creating list" :av "current" (list) :av "left" n :av "element value" ev)  ; Создать массив из n элементов ev
-)
-(aclosure ac "default type value" "array type" i :stage "creating list"
-    :ap ac "current" lst :ap ac "left" k :ap ac "element value" ev :do 
-    (match (> k 0) T :do 
-        (update-eval-aclosure ac :av "current" (cons ev lst) :av "left" (- k 1))  ; Добавить 1 элемент к массиву
-        :exit lst  ; Если список готов, то вернуть его
-    )
-)
-(aclosure ac "default type value" "array type" i :stage "exit array type" 
-    :value lst :do (mo "array lit" :av "type" i :value lst)
-)
-(aclosure ac "default type value" "slice type" i :do (mo "slice lit" :av "type" i :av "value" (list)))
-(aclosure ac "default type value" "struct type" i :stage nil 
-    :ap i "fields" fs :p (attributes fs) ns :p fv (co :amap "identifier" "Go value") :do
-    (update-push-aclosure ac :stage "exit struct type")
-    (match :v (> (length ns) 0) :do
-        (update-push-aclosure ac :stage "adding default value" :av "current" 0 :av "field values" fv)
-        (clear-update-eval-aclosure ac :instance (aget fs (car ns)))
-    )
-)
-(aclosure ac "default type value" "struct type" i :stage "adding default value" 
-    :ap i "fields" fs :p (attributes fs) ns :ap ac "current" p :ap ac "field values" fv :v (< p (length ns)) T :value dv :do 
-    (aset fv (nth p ns) dv)  ; Добавляем значение нового поля
-    (update-eval-aclosure ac :av "field values" fv :av "current" (+ p 1))  ; Шаг итерации
-    (match :v (< (+ p 1) (length ns)) T :do 
-        (clear-update-eval-aclosure ac :instance (aget fs (nth (+ p 1) ns)))  ; Вычисляем значение по умолчанию для следующего поля
-        :exit fv  ; Если все поля готовы, то вернуть
-    )
-)
-(aclosure ac "default type value" "struct type" i :stage "exit array type" 
-    :value fv :do (mo "struct lit" :av "type" i :av "value" fv)
-)
-(aclosure ac "default type value" "pointer type" i :do nil)
-(aclosure ac "default type value" "function type" i :stage nil :do 
-    (update-push-aclosure ac :stage "exit function type")
-    (clear-update-eval-aclosure ac :type "body")  ; Для независимой реализации значения по умолчанию блока
-)
-(aclosure ac "default type value" "function type" i :stage "exit function type" :value bd :do
-    (clear-update-eval-aclosure ac (mo "function lit" :at "signature" (aget i "signature") :at "body" bd))
-)
-(aclosure ac "default type value" "interface type" i :do i)  ; Интерфейс сам по себе является как классом, так и единственным его представителем
-(aclosure ac "default type value" "map type" i :do (mo "map lit" :av "type" i :av "value" (cot :amap "identifier" "Go value")))
-(aclosure ac "default type value" "channel type" i :do nil)
-
-(aclosure ac "default type value" "body" :do 
-    (mo "body" :av "statements" (list) :av "variable location" (cot :amap "identifier" "location") :av "label position" (cot :amap "label" nat))
-)
+(aclosure ac :attribute "opsem::rvalue" :type "identifier" i :agent a :do (aget (aget a "location" i) "value"))
+(aclosure ac :attribute "opsem::lvalue" :type "identifier" i :agent a :do (aget a "location" i))
 
 
 ;;; Blocks
-(aclosure ac "opsem" "block" i :stage nil
+(aclosure ac :attribute "opsem" :type "block" i :stage nil
     :ap i "statements" sts :ap i "variable location" vl :p (attributes vl) ns :do
     (update-push-aclosure ac :stage "variable handling" :av "current" 0 :av "bound" (length ns) :av "variable location" vl :av "names" ns)
     (clear-update-eval-aclosure ac :stage "evaluating statement" :av "current" 0 :av "bound" (length sts) :av "statements" sts)
 )
-(aclosure ac "opsem" "block" i :stage "evaluating statement"
+(aclosure ac :attribute "opsem" :type "block" i :stage "evaluating statement"
     :ap ac "current" p :ap ac "bound" n :ap ac "statements" sts :v (< p n) T :do
     (update-push-aclosure ac "current" (+ p 1))
     (clear-update-eval-aclosure ac :instance (nth p sts))
 )
-(aclosure ac "opsem" "block" i :stage "variable handling" :agent a
+(aclosure ac :attribute "opsem" :type "block" i :stage "variable handling" :agent a
     :ap ac "current" p :ap ac "bound" n :ap ac "variable location" vl :ap "names" ns :v (< p n) T :do 
     (aset a "location" (nth p ns) (nth p vl))  ; Возвращаем прежнее значение переменной
     (clear-update-eval-aclosure ac "current" (+ p 1))
@@ -109,80 +238,64 @@
 
 
 ;;; Declarations
-(aclosure ac "opsem" "const decl" i :stage nil
-    :ap i "specifiers" specs :do
-    (update-eval-aclosure ac :stage "iteration" :av "current" 0 :av "bound" (length specs) :av "specs" specs)
-)
-(aclosure ac "opsem" "const decl" i :stage "iteration"
-    :ap ac "current" p :ap ac "bound" n :ap ac "specs" specs :v (< p n) T :do
-    (update-push-aclosure ac "current" (+ p 1))
-    (clear-update-eval-aclosure ac :instance (nth p specs))
-)
+(aclosure ac :attribute "opsem" :type "type decl" :instance i :agent a :do (aset a "type" (aget i "name") (aget i "type")))
 
-(aclosure ac "opsem" "const spec" i :stage nil
-    :ap i "names" ns :ap i "initializers" is :do
-    (update-eval-aclosure ac :stage "iteration" :av "current" 0 :av "bound" (length ns))
+(aclosure ac :attribute "opsem" :type "const decl block" :instance i :stage nil :do 
+    (update-push-aclosure ac :stage "exit const decl block")
+    (clear-update-eval-aclosure ac :stage "declarating" :av "current" 0)
 )
-(aclosure ac "opsem" "const spec" i :stage "iteration"
-    :ap i "type" tp :ap i "names" ns :ap i "initializers" is
-    :ap ac "current" p :ap ac "bound" b :v (< p b) T :do
-    (update-push-aclosure ac "current" (+ p 1))
-    (update-push-aclosure ac :stage "setting value" :av "name" (nth p ns) :av "type" tp)
-    (clear-update-eval-aclosure ac :instance (nth p is))
+(aclosure ac :attribute "opsem" :type "const decl block" :instance i :stage "declarating" 
+    :ap ac "current" k :ap i "declarations" ds :p (length ds) n :v (< n k) T :agent a :do 
+    (aset a "location" "iota" (mo "location" :av "type" "uint" :av "value" k))
+    (update-push-aclosure ac :av "current" (+ k 1))
+    (clear-update-eval-aclosure ac :instance (nth k ds))
 )
-(aclosure ac "opsem" "const spec" i :stage "setting value"
-    :ap ac "name" name :ap ac "type" tp :value v :agent a :do
+(aclosure ac :attribute "opsem" :type "const decl block" :instance i :stage "exit const decl block" :do (aset "iota" nil))  ; optional
+
+(aclosure ac :attribute "opsem" :type "var decl" :instance i :stage nil :do 
+    (update-push-aclosure ac :stage "declarating" :av "current" 0)
+    (clear-update-eval-aclosure ac :instance (car (aget i "values")))
+)
+(aclosure ac :attribute "opsem" :type "var decl" :instance i :agent a :stage "declarating" 
+    :ap ac "current" k :ap i "names" ns :p (length ns) n :v (< k n) T :p (nth k ns) name :p (nth k (aget i "types")) tp :value v :do 
     (aset a "location" name (mo "location" :av "type" tp :av "value" v))
+    (update-push-aclosure ac :stage "declarating" :av "current" (+ k 1) :av "len" n)
+    (clear-update-eval-aclosure ac :instance (nth (+ k 1) (aget i "values")))
 )
 
-(aclosure ac "opsem" "type decl" i :do ...) ; TODO
-
-(aclosure ac "opsem" "var decl" i :stage nil
-    :ap i "specifiers" specs :do
-    (update-eval-aclosure ac :stage "iteration" :av "current" 0 :av "bound" (length specs) :av "specs" specs)
+(aclosure ac :attribute "opsem" :type "function decl" :instance i :stage nil :do 
+    (update-push-aclosure ac :stage "get function type")
+    (clear-update-eval-aclosure ac :instance (aget i "signature"))
 )
-(aclosure ac "opsem" "var decl" i :stage "iteration"
-    :ap ac "current" p :ap ac "bound" n :ap ac "specs" specs :v (< p n) T :do
-    (update-push-aclosure ac "current" (+ p 1))
-    (clear-update-eval-aclosure ac :instance (nth p specs))
+(aclosure ac :attribute "opsem" :type "function decl" :instance i :stage "get function type" 
+    :value sgn :p (mo "function lit" :av "signature" sgn :av "body" "block") fl
+    (update-push-aclosure ac :stage "exit function decl" :av "function lit" fl)
+    (clear-update-eval-aclosure ac :instance fl :attribute "default type by value")
 )
-
-(aclosure ac "opsem" "var spec" i :stage nil
-    :ap i "names" ns :ap i "initializers" is :do
-    (update-eval-aclosure ac :stage "iteration" :av "current" 0 :av "bound names" (length ns) :av "bound inits" (length is))
-)
-(aclosure ac "opsem" "var spec" i :stage "iteration"
-    :ap i "type" tp :ap i "names" ns :ap i "initializers" is
-    :ap ac "current" p :ap ac "bound names" bn :ap ac "bound inits" bi :v (< p bn) T :do
-    (update-push-aclosure ac "current" (+ p 1))
-    (update-push-aclosure ac :stage "setting value" :av "name" (nth p ns) :av "type" tp)
-    (match :v (< p bi) :do
-        (clear-update-eval-aclosure ac :instance (nth p is))
-        :exit (clear-update-eval-aclosure ac :attribute "default type value" :instance tp)
-    )
-)
-(aclosure ac "opsem" "var spec" i :stage "setting value"
-    :ap ac "name" name :ap ac "type" tp :value v :agent a :do
-    (aset a "location" name (mo "location" :av "type" tp :av "value" v))
+(aclosure ac :attribute "opsem" :type "function decl" :instance i :stage "exit function decl" :value tp :agent a :do
+    (aset a "location" (aget i "name") (mo "location" :av "type" tp :av "value" (aget ac "function lit")))
 )
 
-(aclosure ac "opsem" "short var decl")  ; Limitations prohibit
-
-(aclosure ac "opsem" "function decl" i :stage nil
-    :ap i "name" name :ap i "signature" s :ap i "body" b :agent a :do
-    (aset a "location" name (mo "location"
-        :av "value" (mo "function literal" :av "signature" s :av "body" b) ; signature -> "parameters"
-        :av "type" ... ; Тип - функция(signature) - function type
-        )
-    )
+(aclosure ac :attribute "opsem" :type "signature" :instance i :stage nil :do 
+    (update-push-aclosure ac :stage "get variadic parameter")
+    (clear-update-eval-aclosure ac :instance (aget i "parameters") :attribute "type substitution")
+)
+(aclosure ac :attribute "opsem" :type "signature" :instance i :stage "get variadic parameter" :value ps :do
+    (update-push-aclosure ac :stage "get result" :av "parameters" ps)
+    (clear-update-eval-aclosure ac :instance (aget i "variadic parameter") :attribute "type substitution")
+)
+(aclosure ac :attribute "opsem" :type "signature" :instance i :stage "get result" :value vp :do 
+    (update-push-aclosure ac :stage "exit signature" :av "variadic parameter" vp)  ; ac contains "parameters"
+    (clear-update-eval-aclosure ac :instance (aget i "result") :attribute "type substitution")
+)
+(aclosure ac :attribute "opsem" :type "signature" :instance i :stage "exit signature" :value r :do 
+    (mo "signature" :av "parameters" (aget ac "parameters") :av "variadic parameter" (aget ac "variadic parameter") :av "result" r)
 )
 
-(aclosure ac "opsem" "signature" i :stage nil :do
-    (update-push-aclosure ac :stage "start iterating")
-)
-(aclosure ac "opsem" "signature" i :stage "iteration")
-
-(aclosure ac "opsem" "method decl") ; TODO
+(mot "signature" :at "parameters" (listt "parameter decl") :at "variadic parameter" "variadic decl" :at "result" (uniont (listt "type") (listt "parameter decl")))
+(mot "function decl" :at "name" "function name" :at "signature" "signature" :at "body" "block")
+(mot "function lit" :at "signature" "signature" :at "body" "block")  ; func(a int) bool { return a < 0 }
+(mot "function type" :at "signature" "type signature")
 
 
 ;;; Expressions

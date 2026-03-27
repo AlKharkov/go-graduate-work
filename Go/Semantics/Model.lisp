@@ -1,7 +1,7 @@
 #|
 	Model of the Go language
 
-	Last edit: 20/03/2026
+	Last edit: 27/03/2026
 |#
 
 
@@ -10,11 +10,11 @@
 (typedef "variable name" "identifier")
 (typedef "field name" "identifier")
 (typedef "function name" "identifier")
+(typedef "parameter name" "identifier")
 (typedef "method name" "identifier")
 (typedef "interface name" "identifier")
 (typedef "label name" "identifier")
 (typedef "type name" "identifier")
-(typedef "package name" "identifier")
 
 
 ;;; Values and locations
@@ -29,15 +29,16 @@
 (mot "array lit" :at "type" "array type" :at "value" (listt "Go value"))
 (mot "slice lit" :at "type" "slice type" :at "value" (listt "Go value"))
 (mot "struct lit" :at "type" "struct type" :at "value" (cot :amap "field name" "Go value"))
-(mot "map lit" :at "type" "map type" :at "value" (cot :amap "identifier" "Go value"))
+(mot "map lit" :at "type" "map type" :at "value" (cot :amap "Go value" "Go value"))
 ;;function literals
 (mot "function lit" :at "signature" "signature" :at "body" "block")  ; func(a int) bool { return a < 0 }
-(mot "signature" :at "parameters" (listt "parameter decl") :at "variadic parameter" "variadic decl" :at "result" "function result")
-(mot "parameter decl" :at "name" "identifier" :at "type" "type")
-(mot "variadic decl" :at "name" "identifier" :at "type" "type")  ; func f(n ...int){}(1, 2, 3)
-(mot "function result" :at "result" (uniont (listt "type") (listt "parameter decl")))
+(mot "signature" :at "parameters" (listt "parameter decl") :at "variadic parameter" "single param decl" :at "result" (uniont (listt "type") (listt "parameter decl")))
+(typedef "parameter decl" (uniont "single param decl" "multi param decl"))
+(mot "single param decl" :at "name" "parameter name" :at "type" "type")
+(mot "multi param decl" :at "names" (listt "parameter name") :at "type" "type")  ; semantic construction
 ;;channel literals
 (mot "channel lit" :at "type" "channel type" :at "cap" nat :at "buffer" (listt "Go value"))
+
 
 ;;; Types
 (typedef "type" (uniont "base type" "composite type"))
@@ -51,12 +52,12 @@
 (typedef "string type" (enumt "string"))
 ;;composite types
 (typedef "composite type" (uniont "array type" "slice type" "struct type" "pointer type" "function type" "interface type" "map type" "channel type"))
-(mot "array type" :at "len" nat :at "element type" "type")  ; var a [2]int | [2][2]int ~ [2]([2]int)
+(mot "array type" :at "len" nat :at "element type" "type")  ; var a [2][2]int | The values of array a are of type [2]int
 (mot "slice type" :at "element type" "type")  ; var s []int
 (mot "struct type" :at "fields" (cot :amap "field name" "type"))
 (mot "pointer type" :at "type" "type")
 ;;function types
-(mot "function type" :at "type signature" "type signature")
+(mot "function type" :at "signature" "type signature")
 (mot "type signature" :at "types" (listt "type") :at "variadic type" "type" :at "result" (listt "type"))
 (mot "interface type" :at "elements" (cot :amap "method name" "signature"))
 ; type A interface {
@@ -83,8 +84,8 @@
 (typedef "declaration" (uniont "type decl" "var decl" "function decl" "method decl" "interface decl"))
 (mot "type decl" :at "name" "type name" :at "type" "type")
 ; type Point struct{ x bool }  // Point and struct{ x bool } are different types
-(mot "var decl" :amap "variable name" "type & value")  ; var x float64 = math.Sin(0)
-(mot "type & value" :at "value" "expression" :at "type" "type")
+(mot "const decl block" :at "declarations" (listt "var decl"))
+(mot "var decl" :at "names" (listt "variable name") :at "types" (listt "type") :at "values" (listt "expression"))  ; var y int = 3
 ;;function declarations
 (mot "function decl" :at "name" "function name" :at "signature" "signature" :at "body" "block")
 ; func add(p *Point, q *Point) {
@@ -182,7 +183,7 @@
 ; default: g()
 ; }
 (mot "type switch stmt" :at "init" "statement" :at "guard" "type switch guard" :at "cases" (listt "type case clause"))
-(mot "type switch guard" :at "name" "identifier" :at "variable" "expression")
+(mot "type switch guard" :at "name" "type name" :at "variable" "expression")
 (mot "type case clause" :at "cases" (uniont (listt "type") "default") :at "statements" (listt "statement"))
 ; switch t := x.(type) {              // type checker
 ; case nil:
@@ -192,7 +193,7 @@
 ;;for statement
 (typedef "for statement" (uniont "for condition" "for range"))
 (mot "for condition" :at "init" "statement" :at "condition" "expression" :at "post" "statement" :at "body" "block")
-(mot "for range" :at "names" (listt (uniont "expression" "identifier")) :at "arr" "expression" :at "body" "block")  ; arr: array | slice | string | map | channel
+(mot "for range" :at "names" (listt "variable name") :at "arr" "expression" :at "body" "block")  ; arr: array | slice | string | map | channel
 ; for x < y { a *= 2 }                // This is usually called a while loop.
 ; for i := 0; i < 10; i++ { f(i) }
 ; a := [5]int{1, 2, 3, 4, 5}
@@ -209,7 +210,7 @@
 (mot "select stmt" :at "statement" (listt "common clause"))
 (mot "common clause" :at "case" (uniont "send stmt" "recive = stmt" "receive := stmt" "default") :at "statements" (listt "statement"))
 (mot "receive = stmt" :at "names" (listt "expression") : at "expression" "expression")
-(mot "receive := stmt" :at "names" (listt "identifier") : at "expression" "expression")
+(mot "receive := stmt" :at "names" (listt "variable name") : at "expression" "expression")
 ; ch1, ch2 := make(chan string), make(chan string)
 ; go func() { time.Sleep(1 * time.Second); ch1 <- "данные из канала 1" }()
 ; go func() { time.Sleep(2 * time.Second); ch2 <- "данные из канала 2" }()
