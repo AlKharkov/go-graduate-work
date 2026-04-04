@@ -1,232 +1,400 @@
 #|
-	Model of the Go language
+     Model of the Go language
 
-	Last edit: 27/03/2026
+     Last edit: 04/04/2026
 |#
 
 
+;;; ================================================
 ;;; Names
-(typedef "identifier" (uniont string))
-(typedef "variable name" "identifier")
-(typedef "field name" "identifier")
-(typedef "function name" "identifier")
+;;; ================================================
+
+(typedef "identifier"     (uniont string))
+(typedef "constant name"  "identifier")
+(typedef "variable name"  "identifier")
+(typedef "field name"     "identifier")
+(typedef "function name"  "identifier")
 (typedef "parameter name" "identifier")
-(typedef "method name" "identifier")
-(typedef "interface name" "identifier")
-(typedef "label name" "identifier")
-(typedef "type name" "identifier")
+(typedef "method name"    "identifier")
+(typedef "label name"     "identifier")
+(typedef "type name"      "identifier")
 
 
-;;; Values and locations
-(mot "location" :at "type" "type" :at "value" "Go value")  ; Simulates a memory location
-(typedef "Go value" (uniont "literal" "location"))  ; Location simulates a pointer to location value
-;;constants
-(typedef "constant" (uniont "true" "false" int real "complex constant" string symbol))
-(mot "complex constant" :at "re" real :at "im" real)
-;;literals
-(typedef "literal" (uniont "constant" "composite lit" "function lit" "channel lit"))
-(typedef "composite lit" (uniont "array lit" "slice lit" "struct lit" "map lit"))  ; It construct new values for structs, arrays, slices, and maps
-(mot "array lit" :at "type" "array type" :at "value" (listt "Go value"))
-(mot "slice lit" :at "type" "slice type" :at "value" (listt "Go value"))
-(mot "struct lit" :at "type" "struct type" :at "value" (cot :amap "field name" "Go value"))
-(mot "map lit" :at "type" "map type" :at "value" (cot :amap "Go value" "Go value"))
-;;function literals
-(mot "function lit" :at "signature" "signature" :at "body" "block")  ; func(a int) bool { return a < 0 }
-(mot "signature" :at "parameters" (listt "parameter decl") :at "variadic parameter" "single param decl" :at "result" (uniont (listt "type") (listt "parameter decl")))
-(typedef "parameter decl" (uniont "single param decl" "multi param decl"))
-(mot "single param decl" :at "name" "parameter name" :at "type" "type")
-(mot "multi param decl" :at "names" (listt "parameter name") :at "type" "type")  ; semantic construction
-;;channel literals
-(mot "channel lit" :at "type" "channel type" :at "cap" nat :at "buffer" (listt "Go value"))
-
-
+;;; ================================================
 ;;; Types
+;;; ================================================
+
 (typedef "type" (uniont "base type" "composite type"))
+
 (typedef "base type" (uniont "boolean type" "numeric type" "rune type" "string type"))
+
 (typedef "boolean type" (enumt "bool"))
 (typedef "numeric type" (uniont "int type" "float type" "complex type"))
-(typedef "int type" (uniont "int" "int8" "int16" "int32" "int64" "uint" "uint8" "uint16" " uint32" "uint64" "uintptr" "byte"))
-(typedef "float type" (enumt "float32" "float64"))
+(typedef "int type"     (enumt "int" "int8" "int16" "int32" "int64" "byte" 
+                               "uint" "uint8" "uint16" "uint32" "uint64" "uintptr"))
+(typedef "float type"   (enumt "float32" "float64"))
 (typedef "complex type" (enumt "complex64" "complex128"))
-(typedef "rune type" (enumt "rune"))  ; 'a' | '\t' | '\U00101234'
-(typedef "string type" (enumt "string"))
-;;composite types
-(typedef "composite type" (uniont "array type" "slice type" "struct type" "pointer type" "function type" "interface type" "map type" "channel type"))
-(mot "array type" :at "len" nat :at "element type" "type")  ; var a [2][2]int | The values of array a are of type [2]int
-(mot "slice type" :at "element type" "type")  ; var s []int
-(mot "struct type" :at "fields" (cot :amap "field name" "type"))
-(mot "pointer type" :at "type" "type")
-;;function types
-(mot "function type" :at "signature" "type signature")
-(mot "type signature" :at "types" (listt "type") :at "variadic type" "type" :at "result" (listt "type"))
-(mot "interface type" :at "elements" (cot :amap "method name" "signature"))
-; type A interface {
-;   f(n int)     // "method name" = `f`, "signature" = `(n int)`
-; }
-(mot "map type" :at "key type" "type" :at "element type" "type")  ; map[string]int
-(mot "channel type" :at "direction" "direction" :at "type" "type")
-(typedef "direction" (enumt "bidirectional" "send" "receive"))
-; chan T            // can be used to send and receive values of type T
-; chan<- float64    // can only be used to send float64s
-; <-chan int        // can only be used to receive ints
+(typedef "rune type"    (enumt "rune"))  ; alias for int32, represents a Unicode code point
+(typedef "string type"  (enumt "string"))
+
+;; composite types
+(typedef "composite type" (uniont "array type" "slice type" "struct type" 
+                                  "pointer type" "function type" "method type"
+                                  "interface type" "map type" "channel type"))
+
+(mot "array type"   :at "elem type" "type" :at "len" nat)
+(mot "slice type"   :at "elem type" "type")
+(mot "struct type"  
+     :at "fields" (cot :amap "field name" "type")
+     :at "ordered" (listt "field name"))
+(mot "pointer type" :at "elem type" "type")
+
+;; function type omits parameter names (only types matter for type checking)
+(mot "function type" 
+     :at "param types"   (listt "type") 
+     :at "variadic type" "type" 
+     :at "result types"  (listt "type"))
+
+(mot "method type" 
+     :at "receiver type" "type" 
+     :at "param types"   (listt "type") 
+     :at "variadic type" "type" 
+     :at "result types"  (listt "type"))
+
+(mot "interface type" :at "methods" (mot :amap "method name" "method type"))
+(mot "map type"       :at "key type" "type" :at "elem type" "type")
+(mot "channel type"   :at "elem type" "type")  ; direction is omitted (irrelevant for well-typed programs)
 
 
+;;; ================================================
+;;; Cells and values
+;;; ================================================
+
+;; A cell is a mutable container that holds a Go value.
+;; Variables are bound to cells, not directly to values.
+(mot "cell" :at "value" "Go value")
+
+(typedef "Go value" (uniont "untyped constant" "typed value"))
+
+;; untyped constants have no type until used in context
+(typedef "untyped constant" (uniont bool int real "complex constant" string))
+(mot "complex constant" :at "re" real :at "im" real)
+
+(mot "typed value" 
+     :at "type" "type" 
+     :at "value" (uniont "nil" "primitive value" "composite value"))
+
+;; nil is typed; each reference type has its own typed nil
+(mot "nil" :at "type" "type")
+
+;; primitive value
+(typedef "primitive value" (uniont "bool value" "int value" "float value" 
+                                   "string value" "rune value" "complex value"))
+(mot "bool value"    :at "value" bool)
+(mot "int value"     :at "value" int    :at "bit size" (enumt 8 16 32 64))
+(mot "float value"   :at "value" real   :at "bit size" (enumt 32 64))
+(mot "string value"  :at "value" string :at "length" nat)
+(mot "rune value"    :at "value" int    :at "unicode" string)
+(mot "complex value" :at "re" real      :at "im" real :at "bit size" (enumt 64 128))
+
+;; composite value (reference typed store additional metadata)
+(typedef "composite value" (uniont "array value" "slice value" "struct value" 
+                                   "map value" "channel value" "function value" 
+                                   "method value" "interface value" "pointer value"))
+
+;; array stores elements inline; assignment copies the entire array
+(mot "array value" 
+     :at "type"     "array type" 
+     :at "elements" (listt "Go value"))
+
+;; slice is a view into an array; multiple slices can share the same underlying array
+(mot "slice value" 
+     :at "type"     "slice type" 
+     :at "array"    "array value" 
+     :at "offset"   nat 
+     :at "length"   nat 
+     :at "capacity" nat)
+
+(mot "struct value" 
+     :at "type"   "struct type" 
+     :at "fields" (cot :amap "field name" "Go value"))
+
+(mot "map value" 
+     :at "type"    "map type" 
+     :at "entries" (mot :amap "Go value" "Go value"))
+
+;; channel buffers are FIFO queues; send/receive queues hold waiting goroutines
+(mot "channel value" 
+     :at "type"          "channel type" 
+     :at "buffer"        (listt "Go value") 
+     :at "send queue"    (listt "cell") 
+     :at "receive queue" (listt "cell") 
+     :at "closed"        bool)
+
+(mot "function value" 
+     :at "type"      "function type" 
+     :at "signature" "function signature" 
+     :at "body"      "block" 
+     :at "closure"   (listt "Go value"))
+
+(mot "function signature" 
+     :at "parameters"     (listt "param decl") 
+     :at "variadic param" "param decl" 
+     :at "results"        (uniont (listt "type") (listt "param decl")))  ; results may be named or unnamed
+
+(mot "param decl" :at "type" "type" :at "name" "parameter name")
+
+(mot "method value" 
+     :at "type"      "method type"
+     :at "signature" "method signature" 
+     :at "body"      "block" 
+     :at "closure"   (listt "Go value"))
+
+(mot "method signature" 
+     :at "receiver"       "param decl" 
+     :at "parameters"     (listt "param decl") 
+     :at "variadic param" "param decl" 
+     :at "results"        (listt "param decl"))
+
+(mot "interface value" 
+     :at "type"  "interface type" 
+     :at "value" "typed value")    ; dynamic type is stored inside the typed value
+
+(mot "pointer value" 
+     :at "points to type" "type" 
+     :at "target"         (uniont "cell" "nil"))
+
+
+;;; ================================================
+;;; Literals
+;;; ================================================
+
+(typedef "literal" (uniont "untyped constant" "composite lit" "function lit" "method lit"))
+
+(typedef "composite lit" (uniont "array lit" "slice lit" "struct lit" "map lit"))
+
+(mot "array lit" 
+     :at "type"     "array type" 
+     :at "elements" (listt "expression"))
+
+(mot "slice lit" 
+     :at "type"     "slice type" 
+     :at "indexes"  nat
+     :at "elements" (listt "expression"))
+
+(mot "struct lit" 
+     :at "type"   "struct type" 
+     :at "fields" (listt "field name") 
+     :at "values" (listt "expression"))
+
+(mot "map lit" 
+     :at "type"    "map type" 
+     :at "entries" (mot :amap "expression" "expression"))
+
+(mot "function lit" 
+     :at "signature" "function signature" 
+     :at "body"      "block")
+
+(mot "method lit" 
+     :at "signature" "method signature"
+     :at "body"      "block")
+
+
+;;; ================================================
 ;;; Blocks
+;;; ================================================
+
 (mot "block"
 	:at "statements" (listt "statement")
-	; semantic attributes
-	:at "variable location" (cot :amap "variable name" "location")  ; Старые ячейки иницилизируемых в блоке переменных, nil - если не существовали ранее
-	:at "label position" (cot :amap "label" nat)  ; Позиции встречаемых в блоке меток
+	; semantic attributes (filling during static analysis)
+	:at "label positions"  (cot :amap "label name" nat)        ; statements index for each label
+	:at "variable cells"   (cot :amap "variable name" "cell")  ; current cell for each variable (nil if not yet allocated)
+	:at "type definitions" (cot :amap "type name" "type")      ; local type aliases within the block
 )
 
 
+;;; ================================================
 ;;; Declarations
-(typedef "declaration" (uniont "type decl" "var decl" "function decl" "method decl" "interface decl"))
+;;; ================================================
+
+(typedef "declaration" (uniont "type decl" "const decl" "var decl" "function decl" "method decl"))
+
 (mot "type decl" :at "name" "type name" :at "type" "type")
-; type Point struct{ x bool }  // Point and struct{ x bool } are different types
-(mot "const decl block" :at "declarations" (listt "var decl"))
-(mot "var decl" :at "names" (listt "variable name") :at "types" (listt "type") :at "values" (listt "expression"))  ; var y int = 3
-;;function declarations
-(mot "function decl" :at "name" "function name" :at "signature" "signature" :at "body" "block")
-; func add(p *Point, q *Point) {
-;   p.x += q.x
-; }
-(mot "method decl" :at "receiver" "parameter decl" :at "name" "method name" :at "signature" "signature" :at "body" "block")
-; func (p *Point) add(q *Point) {
-; 	p.x += q.x
-; }
-(mot "interface decl" :at "name" "interface name" :at "type" "interface type")
+(mot "const decl" 
+     :at "names"  (listt "constant name") 
+     :at "types"  (listt "type")  ; optional (inferred from values)
+     :at "values" (listt "expression"))
+(mot "var decl" 
+     :at "names"  (listt "variable name") 
+     :at "types"  (listt "type")  ; optional (inferred from values)
+     :at "values" (listt "expression"))
+(mot "function decl" :at "name" "function name" :at "value" "function lit")
+(mot "method decl"   :at "name" "method name"   :at "value" "method lit")
 
 
+;;; ================================================
 ;;; Expressions
-(typedef "expression" (uniont "literal" "conversion" "method expr" "selector expr" "index expr" "slice expr" "type assertion" "function call" "unary expression" "binary expression"))
-(mot "conversion" :at "type" "type" :at "expression" "expression")  ; float64(2) == 2.0
-(mot "method expression" :at "receiver type" "type" :at "name" "method name")
-; type T struct { a int }
-; func (t T) f(b int) int { return t.a + b }
-; var t T = T{a: 2}    // t.f(1) ~ T.f(t, 1)
-(typedef "selector expression" (uniont "selector struct" "selector method"))
-(mot "selector struct" :at "struct" "expression" :at "field" "field name")  ; person.Age
-(mot "selector method" :at "method" "expression" :at "method" "method name")  ; file.Close()
-(mot "index expr" :at "arr" "expression" :at "index" "expression")  ; arr[0] | slice[1] | m["2"] | s[3]
-(mot "slice expr" :at "arr" "expression" :at "low" "expression" :at "high" "expression" :at "max" "expression")  ; arr[low : high : max] | slice[low : high : max]
+;;; ================================================
+
+(typedef "expression" (uniont "literal" "conversion" "method expr" "selector expr" 
+                              "index expr" "slice expr" "type assertion" "<-1" 
+                              "function call" "unary expression" "binary expression"))
+
+(mot "conversion" :at "type" "type" :at "value" "expression")  ; float64(2)
+
+;; method expression returns a function with the receiver as first parameter
+(mot "method expr" :at "receiver type" "type" :at "name" "method name")
+
+(mot "selector expr" :at "receiver" "expression" :at "name" "identifier")  ; field or method access
+
+(mot "index expr" :at "indexable" "expression" :at "index" "expression")  ; indexable is an array, slice, map or string
+
+(mot "slice expr" 
+     :at "slice" "expression"  ; is an array, slice or string
+     :at "low"   "expression" 
+     :at "high"  "expression" 
+     :at "max"   "expression") ; optional; omitted means cap = len(indexable)
+
 (mot "type assertion" :at "interface" "expression" :at "type" "type")  ; i.(Type)
-; var i interface{} = 3
-; num := i.(int) // Успех: num = 3 (тип int)
+
+(mot "<-1" :at 1 "expression")  ; receive from channel
+
 (mot "function call" :at "function" "expression" :at "arguments" (listt "expression"))  ; min(1, 2)
-(mot "<-1" :at 1 "expression")  ; Return the value from the channel 1
-;;unary expressions
+
+;; unary expressions (using digit notation for operands)
 (typedef "unary expression" (uniont "+1" "-1" "^1" "!1" "*1" "&1"))
-(mot "+1" :at 1 "expression")  ; +x == x
-(mot "-1" :at 1 "expression")  ; -x == -1 * x
-(mot "^1" :at 1 "expression")  ; ^10(2) == 01(2)
-(mot "!1" :at 1 "expression")  ; !true == false
-(mot "*1" :at 1 "expression")
-(mot "&1" :at 1 "expression")
-;;binary expressions
-(typedef "binary expression" (uniont "1||2" "1&&2" "1*2" "1/2" "1%2" "1<<2" "1>>2" "1&2" "1&^2" "1+2" "1-2" "1|2" "1^2" "1=2" "1!2" "1<2" "1<2" "1>2" "1>2"))
-(mot "1||2" :at 1 "expression" :at 2 "expression")
-(mot "1&&2" :at 1 "expression" :at 2 "expression")
-(mot "1*2" :at 1 "expression" :at 2 "expression")
-(mot "1/2" :at 1 "expression" :at 2 "expression")
-(mot "1%2" :at 1 "expression" :at 2 "expression")
-(mot "1<<2" :at 1 "expression" :at 2 "expression")
-(mot "1>>2" :at 1 "expression" :at 2 "expression")
-(mot "1&2" :at 1 "expression" :at 2 "expression")
-(mot "1&^2" :at 1 "expression" :at 2 "expression") ; 1 &^ 2 == 1 & (^2)
-(mot "1+2" :at 1 "expression" :at 2 "expression")
-(mot "1-2" :at 1 "expression" :at 2 "expression")
-(mot "1|2" :at 1 "expression" :at 2 "expression")
-(mot "1^2" :at 1 "expression" :at 2 "expression")
-(mot "1==2" :at 1 "expression" :at 2 "expression")
-(mot "1!=2" :at 1 "expression" :at 2 "expression")
-(mot "1<2" :at 1 "expression" :at 2 "expression")
-(mot "1<=2" :at 1 "expression" :at 2 "expression")
-(mot "1>2" :at 1 "expression" :at 2 "expression")
-(mot "1>=2" :at 1 "expression" :at 2 "expression")
+(mot "+1" :at 1 "expression")  ; unary plus (no effect)
+(mot "-1" :at 1 "expression")  ; unary minus (negation)
+(mot "^1" :at 1 "expression")  ; bitwise complement (^)
+(mot "!1" :at 1 "expression")  ; logical not
+(mot "*1" :at 1 "expression")  ; pointer dereference
+(mot "&1" :at 1 "expression")  ; address of
+
+;; binary expressions (digit notation: 1 = left operand, 2 = right operand)
+(typedef "binary expression" (uniont "1||2" "1&&2" "1*2" "1/2" "1%2" "1<<2" "1>>2" 
+                                     "1&2" "1&^2" "1+2" "1-2" "1|2" "1^2" "1==2" 
+                                     "1!=2" "1<2" "1<=2" "1>2" "1>=2"))
+(mot "1||2" :at 1 "expression" :at 2 "expression")  ; logical OR
+(mot "1&&2" :at 1 "expression" :at 2 "expression")  ; logical AND
+(mot "1*2"  :at 1 "expression" :at 2 "expression")  ; multiplication
+(mot "1/2"  :at 1 "expression" :at 2 "expression")  ; division
+(mot "1%2"  :at 1 "expression" :at 2 "expression")  ; remainder (integers only)
+(mot "1<<2" :at 1 "expression" :at 2 "expression")  ; left shift
+(mot "1>>2" :at 1 "expression" :at 2 "expression")  ; right shift
+(mot "1&2"  :at 1 "expression" :at 2 "expression")  ; bitwise AND
+(mot "1&^2" :at 1 "expression" :at 2 "expression")  ; bitwise AND NOT (a &^ b = a & (^b))
+(mot "1+2"  :at 1 "expression" :at 2 "expression")  ; addition
+(mot "1-2"  :at 1 "expression" :at 2 "expression")  ; subtraction
+(mot "1|2"  :at 1 "expression" :at 2 "expression")  ; bitwise OR
+(mot "1^2"  :at 1 "expression" :at 2 "expression")  ; bitwise XOR
+(mot "1==2" :at 1 "expression" :at 2 "expression")  ; equality
+(mot "1!=2" :at 1 "expression" :at 2 "expression")  ; inequality
+(mot "1<2"  :at 1 "expression" :at 2 "expression")  ; less than
+(mot "1<=2" :at 1 "expression" :at 2 "expression")  ; less than or equal
+(mot "1>2"  :at 1 "expression" :at 2 "expression")  ; greater than
+(mot "1>=2" :at 1 "expression" :at 2 "expression")  ; greater than or equal
 
 
+;;; ================================================
 ;;; Statements
-(typedef "statement" (uniont "declaration" "label stmt" "empty stmt" "1++" "1--" "assignment stmt" "if stmt" "switch stmt" "for stmt" "return stmt" "break stmt" "continue stmt" "goto stmt" "go stmt" "1<-2" "fallthrough stmt" "select stmt" "defer stmt"))
-(mot "label stmt" :at "label" "label name" :at "statement" "statement")
-(typedef "empty stmt")  ; The empty statement does nothing
-(mot "1++ stmt" :at "1" "expression")  ; x += 1
-(mot "1-- stmt" :at "1" "expression")  ; x -= 1
-;;assignment statements
-(typedef "assignment stmt" (uniont "1=2" "1+=2" "1-=2" "1|=2" "1^=2" "1*=2" "1/=2" "1%=2" "1<<=2" "1>>=2" "1&=2" "1&^=2"))
-(mot "1=2" :at 1 (listt "expression") :at 2 (listt "expression"))
-(mot "1+=2" :at 1 (listt "expression") :at 2 (listt "expression"))
-(mot "1-=2" :at 1 (listt "expression") :at 2 (listt "expression"))
-(mot "1|=2" :at 1 (listt "expression") :at 2 (listt "expression"))
-(mot "1^=2" :at 1 (listt "expression") :at 2 (listt "expression"))
-(mot "1*=2" :at 1 (listt "expression") :at 2 (listt "expression"))
-(mot "1/=2" :at 1 (listt "expression") :at 2 (listt "expression"))
-(mot "1%=2" :at 1 (listt "expression") :at 2 (listt "expression"))
+;;; ================================================
+
+(typedef "statement" (uniont "declaration" "label" "empty stmt" "1++" "1--" 
+                             "assignment stmt" "if stmt" "switch stmt" "for stmt" 
+                             "return stmt" "break stmt" "continue stmt" "goto stmt" 
+                             "defer stmt" "go stmt" "1<-2" "fallthrough" "select stmt"))
+
+(mot "label" :at "name" "label name" :at "statement" "statement")
+(cot "empty stmt")  ; does nothing, used as placeholder
+
+(mot "1++ stmt" :at 1 "expression")  ; increment
+(mot "1-- stmt" :at 1 "expression")  ; decrement
+
+;; assignment statements (digit notation)
+(typedef "assignment stmt" (uniont "1=2" "1+=2" "1-=2" "1|=2" "1^=2" "1*=2" "1/=2" 
+                                   "1%=2" "1<<=2" "1>>=2" "1&=2" "1&^=2"))
+(mot "1=2"   :at 1 (listt "expression") :at 2 (listt "expression"))
+(mot "1+=2"  :at 1 (listt "expression") :at 2 (listt "expression"))
+(mot "1-=2"  :at 1 (listt "expression") :at 2 (listt "expression"))
+(mot "1|=2"  :at 1 (listt "expression") :at 2 (listt "expression"))
+(mot "1^=2"  :at 1 (listt "expression") :at 2 (listt "expression"))
+(mot "1*=2"  :at 1 (listt "expression") :at 2 (listt "expression"))
+(mot "1/=2"  :at 1 (listt "expression") :at 2 (listt "expression"))
+(mot "1%=2"  :at 1 (listt "expression") :at 2 (listt "expression"))
 (mot "1<<=2" :at 1 (listt "expression") :at 2 (listt "expression"))
 (mot "1>>=2" :at 1 (listt "expression") :at 2 (listt "expression"))
-(mot "1&=2" :at 1 (listt "expression") :at 2 (listt "expression"))
+(mot "1&=2"  :at 1 (listt "expression") :at 2 (listt "expression"))
 (mot "1&^=2" :at 1 (listt "expression") :at 2 (listt "expression"))
-;;if statement
-(mot "if stmt" :at "init" "statement" :at "condition" "expression" :at "then" "block" :at "else" (uniont "if statement" "block"))
-; if x := f(); x < y {
-; 	return x, true
-; } else if x > y {
-; 	return y, true
-; }
-;;switch statement
+
+;; if statement
+(mot "if stmt" 
+     :at "init"      "statement"
+     :at "condition" "expression" 
+     :at "then"      "block" 
+     :at "else"      (uniont "if stmt" "block"))
+
+;; switch statement
 (typedef "switch stmt" (uniont "expr switch stmt" "type switch stmt"))
-(mot "expr switch stmt" :at "init" "statement" :at "controlling expression" "expression" :at "cases" (listt "expr case clause"))
-(mot "expr case clause" :at "cases" (uniont (listt "expression") "default") :at "statements" (listt "statement"))
-(cot "default")
-; switch a {
-; case 0, 1, 2: f()
-; default: g()
-; }
-(mot "type switch stmt" :at "init" "statement" :at "guard" "type switch guard" :at "cases" (listt "type case clause"))
-(mot "type switch guard" :at "name" "type name" :at "variable" "expression")
-(mot "type case clause" :at "cases" (uniont (listt "type") "default") :at "statements" (listt "statement"))
-; switch t := x.(type) {              // type checker
-; case nil:
-; 	fmt.Println("x is nil")  
-; default:
-;   fmt.Println("don't know the type")
-;;for statement
-(typedef "for statement" (uniont "for condition" "for range"))
-(mot "for condition" :at "init" "statement" :at "condition" "expression" :at "post" "statement" :at "body" "block")
-(mot "for range" :at "names" (listt "variable name") :at "arr" "expression" :at "body" "block")  ; arr: array | slice | string | map | channel
-; for x < y { a *= 2 }                // This is usually called a while loop.
-; for i := 0; i < 10; i++ { f(i) }
-; a := [5]int{1, 2, 3, 4, 5}
-; for i, v := range a {               // for statement with range clause
-;   fmt.Println(i, v)                 // i a[i]
-; }
-(mot "return" :at "expressions" (listt "expression"))
-(mot "break " :at "label" "label")
-(mot "continue" :at "label" "label")
-(mot "goto" :at "label" "label")
-;;goroutines and channels
-(mot "go stmt" :at "body" "expression")  ; It starts the execution of a function call as an independent concurrent thread of control
-(mot "1<-2" :at 1 "expression")  ; Adds value 2 to channel 1
-(mot "select stmt" :at "statement" (listt "common clause"))
-(mot "common clause" :at "case" (uniont "send stmt" "recive = stmt" "receive := stmt" "default") :at "statements" (listt "statement"))
-(mot "receive = stmt" :at "names" (listt "expression") : at "expression" "expression")
-(mot "receive := stmt" :at "names" (listt "variable name") : at "expression" "expression")
+
+(cot "default")      ; default case marker
+(cot "fallthrough")  ; transfers control to the next case clause (cannot be used in type switch)
+
+(mot "expr switch stmt" 
+     :at "init"       "statement" 
+     :at "controlled" "expression" 
+     :at "cases"      (listt "expr case clause"))
+
+(mot "expr case clause" 
+     :at "cases"      (uniont (listt "expression") "default") 
+     :at "statements" (listt "statement"))
+
+(mot "type switch stmt" 
+     :at "init"  "statement" 
+     :at "name"  "variable name"  ; variable that receives the value (optional)
+     :at "value" "expression"     ; expression to assert type on
+     :at "cases" (listt "type case clause"))
+
+(mot "type case clause" 
+     :at "cases"      (uniont (listt "type") "default") 
+     :at "statements" (listt "statement"))
+
+;; for statement
+(typedef "for stmt" (uniont "for condition" "for range"))
+
+(mot "for condition"               ; while-like loop or traditional for loop
+     :at "init"      "statement" 
+     :at "condition" "expression" 
+     :at "post"      "statement" 
+     :at "body"      "block")
+
+(mot "for range"                             ; range loop (for each loop)
+     :at "names"     (listt "variable name")  ; 1 or 2 variables
+     :at "operation" (enumt "assign" "decl")
+     :at "iterable"  "expression"             ; array, slice, string, map or channel
+     :at "body"      "block")
+
+(mot "return stmt"   :at 1 (listt "expression"))
+(mot "break stmt"    :at 1 "label name")  ; optional label
+(mot "continue stmt" :at 1 "label name")  ; optional label
+(mot "goto stmt"     :at 1 "label name")
+(mot "defer stmt"    :at 1 "expression")  ; schedules function call for later (executed when surrounding function returns)
+(mot "go stmt"       :at 1 "expression")  ; spawns a goroutine (function or method call)
+
+(mot "1<-2" :at 1 "expression" :at 2 "expression")  ; send on channel
+
+;; select statement
+(mot "select stmt" :at "cases" (listt "common clause"))
+
+(mot "common clause" 
+     :at "case"       (uniont "send stmt" "receive assign" "receive decl" "default") 
+     :at "statements" (listt "statement"))
+
+(mot "receive assign" :at 1 (listt "expression")    :at 2 "expression")  ; x, ok = <-ch
+(mot "receive decl"   :at 1 (listt "variable name") :at 2 "expression")  ; x, ok := <-ch
 ; ch1, ch2 := make(chan string), make(chan string)
-; go func() { time.Sleep(1 * time.Second); ch1 <- "данные из канала 1" }()
-; go func() { time.Sleep(2 * time.Second); ch2 <- "данные из канала 2" }()
+; go func() { time.Sleep(1 * time.Second); ch1 <- "data from channel 1" }()
+; go func() { time.Sleep(2 * time.Second); ch2 <- "data from channel 2" }()
 ; select {
-; case msg1 := <-ch1: fmt.Println("Получено:", msg1)
-; case msg2 := <-ch2: fmt.Println("Получено:", msg2)
-; }
-(typedef "fallthrough" (enumt "fallthrough"))
-; switch {                     // prints "true & false"
-;   case true:
-;     fmt.Print("true & ")
-;     fallthrough              // It transfers control to the next case clause in a switch
-;   case false:
-;     fmt.Print("false")
-; }
-(mot "defer stmt" :at "expression" "expression")  ; A "defer" statement invokes a function whose execution is deferred to the moment the surrounding function returns
-; for i := 0; i <= 3; i++ {    // prints 3 2 1 0
-; 	defer fmt.Print(i)
+; case msg1 := <-ch1: fmt.Println("Received ", msg1)
+; case msg2 := <-ch2: fmt.Println("Received ", msg2)
 ; }

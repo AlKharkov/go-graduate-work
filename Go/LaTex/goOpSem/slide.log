@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2026.2.12)  20 MAR 2026 17:33
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2026.2.12)  27 MAR 2026 18:08
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -276,16 +276,29 @@ on input line 2083.
 
 (d:/Programs/texlive/2025/texmf-dist/tex/generic/babel/locale/ru/babel-russian.
 tex)
+(d:/Programs/texlive/2025/texmf-dist/tex/generic/babel/locale/en/babel-english.
+tex)
+(d:/Programs/texlive/2025/texmf-dist/tex/generic/babel/locale/ru/babel-russian.
+tex)
+Package babel Info: Importing font and identification data for english
+(babel)             from babel-en.ini. Reported on input line 4298.
+ (d:/Programs/texlive/2025/texmf-dist/tex/generic/babel-english/english.ldf
+Language: english 2017/06/06 v3.3r English support from the babel system
+Package babel Info: Hyphen rules for 'canadian' set to \l@english
+(babel)             (\language0). Reported on input line 102.
+Package babel Info: Hyphen rules for 'australian' set to \l@ukenglish
+(babel)             (\language15). Reported on input line 105.
+Package babel Info: Hyphen rules for 'newzealand' set to \l@ukenglish
+(babel)             (\language15). Reported on input line 108.
+)
 Package babel Info: Importing font and identification data for russian
 (babel)             from babel-ru.ini. Reported on input line 4298.
-
-(d:/Programs/texlive/2025/texmf-dist/tex/generic/babel-russian/russianb.ldf
+ (d:/Programs/texlive/2025/texmf-dist/tex/generic/babel-russian/russianb.ldf
 File: russianb.ldf 2021/01/10 1.3m Russian support for the Babel system
 Language: russian 2020/09/09 1.3k Russian support for the Babel system
 Package babel Info: Making " an active character on input line 124.
 Package babel Info: Default for \cyrdash is provided on input line 163.
-))
-(d:/Programs/texlive/2025/texmf-dist/tex/latex/relsize/relsize.sty
+)) (d:/Programs/texlive/2025/texmf-dist/tex/latex/relsize/relsize.sty
 Package: relsize 2013/03/29 ver 4.1
 )
 (./systinf.sty (d:/Programs/texlive/2025/texmf-dist/tex/latex/base/fontenc.sty
@@ -893,31 +906,31 @@ File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
 )
 (./slide.aux
 Package babel Info: 'russian' activates 'russian' shorthands.
-(babel)             Reported on input line 8.
+(babel)             Reported on input line 9.
 )
 \openout1 = `slide.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 103.
-LaTeX Font Info:    ... okay on input line 103.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 103.
-LaTeX Font Info:    ... okay on input line 103.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 103.
-LaTeX Font Info:    ... okay on input line 103.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 103.
-LaTeX Font Info:    ... okay on input line 103.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 103.
-LaTeX Font Info:    ... okay on input line 103.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 103.
-LaTeX Font Info:    ... okay on input line 103.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 103.
-LaTeX Font Info:    ... okay on input line 103.
-LaTeX Font Info:    Checking defaults for T2A/cmr/m/n on input line 103.
-LaTeX Font Info:    ... okay on input line 103.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 103.
-LaTeX Font Info:    ... okay on input line 103.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 103.
-LaTeX Font Info:    ... okay on input line 103.
-LaTeX Info: Redefining \th on input line 103.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 168.
+LaTeX Font Info:    ... okay on input line 168.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 168.
+LaTeX Font Info:    ... okay on input line 168.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 168.
+LaTeX Font Info:    ... okay on input line 168.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 168.
+LaTeX Font Info:    ... okay on input line 168.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 168.
+LaTeX Font Info:    ... okay on input line 168.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 168.
+LaTeX Font Info:    ... okay on input line 168.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 168.
+LaTeX Font Info:    ... okay on input line 168.
+LaTeX Font Info:    Checking defaults for T2A/cmr/m/n on input line 168.
+LaTeX Font Info:    ... okay on input line 168.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 168.
+LaTeX Font Info:    ... okay on input line 168.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 168.
+LaTeX Font Info:    ... okay on input line 168.
+LaTeX Info: Redefining \th on input line 168.
 
 (d:/Programs/texlive/2025/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
@@ -953,7 +966,7 @@ Package caption Info: subfig package v1.3 is loaded.
 Package caption Info: hyperref package is loaded.
 Package caption Info: listings package is loaded.
 Package caption Info: End \AtBeginDocument code.
-Package hyperref Info: Link coloring OFF on input line 103.
+Package hyperref Info: Link coloring OFF on input line 168.
 
 (./slide.out) (./slide.out)
 \@outlinefile=\write4
@@ -961,125 +974,108 @@ Package hyperref Info: Link coloring OFF on input line 103.
 
 \c@lstlisting=\count381
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <12> on input line 116.
+(Font)              <12> on input line 189.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <8> on input line 116.
+(Font)              <8> on input line 189.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <6> on input line 116.
-LaTeX Font Info:    Trying to load font information for U+lasy on input line 11
-6.
+(Font)              <6> on input line 189.
+LaTeX Font Info:    Trying to load font information for U+lasy on input line 18
+9.
 
 (d:/Programs/texlive/2025/texmf-dist/tex/latex/base/ulasy.fd
 File: ulasy.fd 1998/08/17 v2.2e LaTeX symbol font definitions
 )
 Package babel Info: 'russian' activates 'russian' shorthands.
-(babel)             Reported on input line 135.
+(babel)             Reported on input line 198.
  [1{d:/Programs/texlive/2025/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{d:/P
 rograms/texlive/2025/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t2a.enc}
 
+{d:/Programs/texlive/2025/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}
 ]
-LaTeX Font Info:    Trying to load font information for T2A+cmtt on input line 
-139.
 
+Package natbib Warning: Citation `go-spec' on page 2 undefined on input line 20
+7.
+
+LaTeX Font Info:    Trying to load font information for T2A+cmtt on input line 
+210.
 (d:/Programs/texlive/2025/texmf-dist/tex/latex/cyrillic/t2acmtt.fd
 File: t2acmtt.fd 2001/08/11 v1.0a Computer Modern Cyrillic font definitions
-)
+) [2]
 LaTeX Font Info:    Font shape `T2A/cmtt/bx/n' in size <12> not available
-(Font)              Font shape `T2A/cmtt/m/n' tried instead on input line 139.
+(Font)              Font shape `T2A/cmtt/m/n' tried instead on input line 213.
 
-Underfull \vbox (badness 1502) has occurred while \output is active []
-
- [2]
-[3] [4] [5]
-Overfull \hbox (19.62859pt too wide) in paragraph at lines 249--250
-[]\T2A/cmr/m/n/12 Второй вид ти-пов ха-рак-те-ри-зу-ет-ся яв-ным пе-ре-чис-ле-н
-и-ем вхо-дя-щих в него ти-пов: [][][][][][][][]
- []
-
-[6] [7]
-Overfull \hbox (2.15157pt too wide) in paragraph at lines 291--292
-[]\T2A/cmr/m/n/12 Тип ин-тер-фейс [][][][][][][][][][][][][][][][][][] пред-ста
--ви-им как мно-же-ство, эле-мен-ты ко-то-ро-го мож-
+Overfull \hbox (17.57121pt too wide) in paragraph at lines 223--224
+\T2A/cmr/m/n/12 ные ти-пы кон-кре-ти-зи-ру-ют это по-ня-тие для раз-лич-ных ка-
+те-го-рий объ-ек-тов: [][][][][][]
  []
 
 
-Overfull \hbox (7.67236pt too wide) in paragraph at lines 293--294
-[]\T2A/cmr/m/n/12 Тип сиг-на-ту-ра [][][][][][][][][][][] мож-но на-звать кон-к
-ре-ти-зи-ро-ва-ни-ем сиг-на-ту-ры ти-пов [][][][][][][][]
+Overfull \hbox (9.30673pt too wide) in paragraph at lines 223--224
+\T2A/cmr/m/n/12 ций, [][][][][][] ^^V для ме-то-дов, [][][][][][] ^^V для ин-те
+р-фей-сов, [][][][][][]
  []
 
-[8] [9] [10] [11] [12] [13] [14]
-Underfull \vbox (badness 3000) has occurred while \output is active []
+[3]
+Overfull \hbox (7.83041pt too wide) in paragraph at lines 252--253
+\T2A/cmr/m/n/12 Конструкция [][][][][][] за-да-јт ас-со-ци-а-тив-ный мас-сив, с
+о-по-став-ля-ю-щий клю-чам (име-
+ []
 
- [15]
-[16]
-Underfull \vbox (badness 10000) has occurred while \output is active []
+[4]
+Overfull \hbox (22.3382pt too wide) in paragraph at lines 264--265
+\T2A/cmr/m/n/12 раз-де-ля-ют-ся на оди-ноч-ные ([][][][][][]) и мно-же-ствен-ны
+е ([][][][][][]).
+ []
 
- [17]
-Underfull \vbox (badness 10000) has occurred while \output is active []
+[5] [6] [7] [8] [9] [10] [11] [12] [13] [14] [15]
+Underfull \vbox (badness 5954) has occurred while \output is active []
+
+ [16]
+[17]
+Underfull \vbox (badness 1701) has occurred while \output is active []
 
  [18]
-[19] (./slide.aux)
+[19] [20] [21]
+No file slide.bbl.
+
+Package natbib Warning: There were undefined citations.
+
+[22] (./slide.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-11-06>
  ***********
-
-
-Package rerunfilecheck Warning: File `slide.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `slide.out':
-(rerunfilecheck)             Before: B828BFD273596519A63FF885006937CF;2785
-(rerunfilecheck)             After:  F214A7750805A9BAFADAE7A3DE7C03EA;1859.
+Package rerunfilecheck Info: File `slide.out' has not changed.
+(rerunfilecheck)             Checksum: 060ABD64A1D575D2ACF9C5F7EA395664;10163.
  ) 
 Here is how much of TeX's memory you used:
- 25960 strings out of 468142
- 467050 string characters out of 5432722
- 1021528 words of memory out of 5000000
- 54024 multiletter control sequences out of 15000+600000
- 640498 words of font info for 65 fonts, out of 8000000 for 9000
+ 26256 strings out of 468142
+ 472068 string characters out of 5432722
+ 1010422 words of memory out of 5000000
+ 54209 multiletter control sequences out of 15000+600000
+ 644291 words of font info for 72 fonts, out of 8000000 for 9000
  846 hyphenation exceptions out of 8191
- 84i,9n,104p,1763b,2110s stack positions out of 10000i,1000n,20000p,200000b,200000s
-
-pdfTeX warning (dest): name{subsection.4.6} has been referenced but does not ex
-ist, replaced by a fixed one
-
-
-pdfTeX warning (dest): name{subsection.4.5} has been referenced but does not ex
-ist, replaced by a fixed one
-
-
-pdfTeX warning (dest): name{subsection.4.4} has been referenced but does not ex
-ist, replaced by a fixed one
-
-
-pdfTeX warning (dest): name{subsection.4.3} has been referenced but does not ex
-ist, replaced by a fixed one
-
-
-pdfTeX warning (dest): name{subsection.4.2} has been referenced but does not ex
-ist, replaced by a fixed one
-
-
-pdfTeX warning (dest): name{subsection.4.1} has been referenced but does not ex
-ist, replaced by a fixed one
-
+ 84i,7n,104p,977b,2133s stack positions out of 10000i,1000n,20000p,200000b,200000s
+<d:/Programs/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfbx1095.pfb
+><d:/Programs/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb>
 <d:/Programs/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfbx1440.pfb><
 d:/Programs/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfbx1728.pfb><d
-:/Programs/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm0600.pfb><d:
-/Programs/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm0900.pfb><d:/
-Programs/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm1095.pfb><d:/P
-rograms/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb><d:/Pr
-ograms/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm1440.pfb><d:/Pro
-grams/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfsl0900.pfb><d:/Prog
-rams/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfti1440.pfb><d:/Progr
-ams/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sftt1200.pfb>
-Output written on slide.pdf (19 pages, 266959 bytes).
+:/Programs/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfit0800.pfb><d:
+/Programs/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfit1200.pfb><d:/
+Programs/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm0600.pfb><d:/P
+rograms/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm0900.pfb><d:/Pr
+ograms/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm1095.pfb><d:/Pro
+grams/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb><d:/Prog
+rams/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm1440.pfb><d:/Progr
+ams/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfsl0900.pfb><d:/Progra
+ms/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfti1095.pfb><d:/Program
+s/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfti1440.pfb><d:/Programs
+/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sftt0800.pfb><d:/Programs/
+texlive/2025/texmf-dist/fonts/type1/public/cm-super/sftt1200.pfb>
+Output written on slide.pdf (22 pages, 377211 bytes).
 PDF statistics:
- 537 PDF objects out of 1000 (max. 8388607)
- 491 compressed objects within 5 object streams
- 297 named destinations out of 1000 (max. 500000)
- 149 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 791 PDF objects out of 1000 (max. 8388607)
+ 726 compressed objects within 8 object streams
+ 389 named destinations out of 1000 (max. 500000)
+ 413 words of extra memory for PDF output out of 10000 (max. 10000000)
 
