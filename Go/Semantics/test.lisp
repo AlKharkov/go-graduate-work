@@ -4,7 +4,22 @@
      :at "elements" (listt "Go value"))
 (mot "array lit" 
      :at "type"     "array type" 
-     :at "elements" (listt "expression"))
+     :at "elements" (listt (mot :at "index" nat :at "value" "expression")))
+
+
+
+
+(mot "slice type"   :at "elem type" "type")
+(mot "slice value" 
+     :at "type"     "slice type" 
+     :at "array"    "array value" 
+     :at "offset"   nat 
+     :at "length"   nat 
+     :at "capacity" nat)
+(mot "slice lit" 
+     :at "type"     "slice type" 
+     :at "elements" (listt (mot :at "index" nat :at "value" "expression")))
+
 
 
 

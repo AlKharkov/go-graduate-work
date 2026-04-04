@@ -1,7 +1,7 @@
 #|
 	Operational semantics for the Go language
 
-    Last edit: 03/04/2026
+    Last edit: 04/04/2026
 |#
 
 
@@ -38,6 +38,82 @@
 ;;; ================================================
 ;;; Literals
 ;;; ================================================
+
+;; array lit
+; Отправляет вычислять значение по умолчанию для элементов массива.
+(aclosure ac :attribute "opsem::rvalue" :type "array lit" :instance i :stage nil :do 
+    (update-push-aclosure ac :stage "fill defaults")
+    (clear-update-eval-aclosure ac :attribute "default value by type" :instance (aget i "type" "elem type"))
+)
+; Заполняет массив значениями по умолчанию. Отправляет вычислять явно заданные значения.
+(aclosure ac :attribute "opsem::rvalue" :type "array lit" :instance i :stage "fill defaults" 
+    :value v :ap i "elements" es :do 
+    (match :v (null es) T :do (mo "array value" :av "type" (aget i "type") :av "elements" nil) 
+    :exit (update-push-aclosure ac :stage "evaluating" :av "left" es :av "array" (make-list (aget i "type" "len") v))
+          (clear-update-eval-aclosure ac :instance (aget (car es) "value")))
+)
+; Изменяет значение очередного элемента массива.
+; Если все значения вычислены, то создаёт и возвращает значение массива. Иначе отправляет вычислять далее.
+(aclosure ac :attribute "opsem::rvalue" :type "array lit" :instance i :stage "evaluating" 
+    :ap ac "left" left :ap ac "array" arr :value v :ap (car left) "index" k :do 
+    (let ((c arr)) (dotimes (j k (setf (car c) v)) (setf c (cdr c))))
+    (match :v (null (cdr left)) T :do (mo "array value" :av "type" (aget i "type") :av "elements" arr)
+    :exit (update-push-aclosure ac :av "left" (cdr left) :av "array" arr)
+          (clear-update-eval-aclosure ac :instance (car (cdr left))))
+)
+
+;; slice lit
+; Отправляет вычислять значение по умолчанию для элементов среза.
+(aclosure ac :attribute "opsem::rvalue" :type "slice lit" :instance i :stage nil :do 
+    (update-push-aclosure ac :stage "build value")
+    (update-push-aclosure ac :stage "fill defaults")
+    (clear-update-eval-aclosure ac :attribute "default value by type" :instance (aget i "type" "elem type"))
+)
+; По максимальному индексу создаёт массив. Отправляет вычислять явно заданные значения.
+(aclosure ac :attribute "opsem::rvalue" :type "slice lit" :instance i :stage "fill defaults" 
+    :value v :ap i "elements" es :p 0 m :do 
+    (dolist (e es) (let ((k (aget e "index"))) (if (> k m) (setf m k))))
+    (match :v (null es) T :do nil
+    :exit (update-push-aclosure ac :stage "evaluating" :av "left" es :av "array" (make-list (1+ m) v))
+          (clear-update-eval-aclosure ac :instance (aget (car es) "value")))
+)
+; Изменяет значение очередного элемента среза.
+; Если все значения вычислены, то возвращает их в правильном порядке. Иначе отправляет вычислять далее.
+(aclosure ac :attribute "opsem::rvalue" :type "slice lit" :instance i :stage "evaluating" 
+    :ap ac "left" left :ap ac "array" arr :value v :p (aget (car left) "index") k :do 
+    (let ((c arr)) (dotimes (j k (setf (car c) v)) (setf c (cdr c))))
+    (match :v (null left) T :do (reverse arr) 
+    :exit (update-push-aclosure ac :av "left" (cdr left) :av "array" arr)
+          (clear-update-eval-aclosure ac :instance (car (cdr left))))
+)
+; Создаёт и возвращает значение среза.
+(aclosure ac :attribute "opsem::rvalue" :type "slice lit" :instance i :stage "build value" 
+    :value arr :ap i "type" stp :ap stp "elem type" etp :p (length arr) n :do 
+    (mo "slice value" 
+        :av "type" (aget i "type")
+        :av "array" (mo "array value" :av "type" (mo "array type" :av "elem type" etp :av "len" n) :av "elements" arr)
+        :av "offset" 0 
+        :av "length" n
+        :av "capacity" n)
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ;; array lit
 (aclosure ac :attribute "opsem::rvalue" :type "array lit" :instance i :stage nil 

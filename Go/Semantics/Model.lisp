@@ -44,9 +44,7 @@
 
 (mot "array type"   :at "elem type" "type" :at "len" nat)
 (mot "slice type"   :at "elem type" "type")
-(mot "struct type"  
-     :at "fields" (cot :amap "field name" "type")
-     :at "ordered" (listt "field name"))
+(mot "struct type"  :at "fields" (cot :amap "field name" "type"))
 (mot "pointer type" :at "elem type" "type")
 
 ;; function type omits parameter names (only types matter for type checking)
@@ -175,21 +173,19 @@
 
 (mot "array lit" 
      :at "type"     "array type" 
-     :at "elements" (listt "expression"))
+     :at "elements" (listt (mot :at "index" nat :at "value" "expression")))
 
 (mot "slice lit" 
      :at "type"     "slice type" 
-     :at "indexes"  nat
-     :at "elements" (listt "expression"))
+     :at "elements" (listt (mot :at "index" nat :at "value" "expression")))
 
 (mot "struct lit" 
      :at "type"   "struct type" 
-     :at "fields" (listt "field name") 
-     :at "values" (listt "expression"))
+     :at "fields" (listt (mot :at "field" "field name" :at "value" "expression")))
 
 (mot "map lit" 
-     :at "type"    "map type" 
-     :at "entries" (mot :amap "expression" "expression"))
+     :at "type"     "map type" 
+     :at "elements" (listt (mot :at "key" "expression" :at "value" "expression")))
 
 (mot "function lit" 
      :at "signature" "function signature" 
@@ -359,18 +355,36 @@
      :at "statements" (listt "statement"))
 
 ;; for statement
-(typedef "for stmt" (uniont "for condition" "for range"))
+(typedef "for stmt" (uniont "for condition" "for range indexable" 
+                            "for range map" "for range channel"))
 
 (mot "for condition"               ; while-like loop or traditional for loop
-     :at "init"      "statement" 
+     :at "init"      "statement"   ; optional
      :at "condition" "expression" 
      :at "post"      "statement" 
      :at "body"      "block")
 
-(mot "for range"                             ; range loop (for each loop)
-     :at "names"     (listt "variable name")  ; 1 or 2 variables
+(mot "for range indexable"
+     :at "init"      "statement"              ; optional
+     :at "index"     "variable name"
+     :at "value"     "variable name"          ; optional
+     :at "operation" (enumt "assign" "decl")  ; = or :=
+     :at "indexable" "expression"             ; array, slice or string
+     :at "body"      "block")
+
+(mot "for range map"
+     :at "init"      "statement"              ; optional
+     :at "key"       "variable name"
+     :at "value"     "variable name"          ; optional
      :at "operation" (enumt "assign" "decl")
-     :at "iterable"  "expression"             ; array, slice, string, map or channel
+     :at "map"       "expression"
+     :at "body"      "block")
+
+(mot "for range channel"
+     :at "init"      "statement"              ; optional
+     :at "value"     "variable name"
+     :at "operation" (enumt "assign" "decl") 
+     :at "channel"   "expression" 
      :at "body"      "block")
 
 (mot "return stmt"   :at 1 (listt "expression"))
