@@ -193,3 +193,56 @@
     (clear-update-eval-aclosure ac :instance (nth k ds))
 )
 (aclosure ac :attribute "opsem" :type "const decl block" :instance i :stage "exit const decl block" :do (aset "iota" nil))  ; optional
+
+
+
+;;; ================================================
+;;; Declarations
+;;; ================================================
+
+(aclosure ac :attribute "opsem" :type "const decl" :instance i :stage nil :do 
+    (update-push-aclosure ac :stage "declarating" :av "current" 0)
+    (clear-update-eval-aclosure ac :instance (car (aget i "values")))
+)
+
+(aclosure ac :attribute "opsem" :type "const decl" :instance i :stage "declarating" :agent a 
+    :ap ac "current" k :ap i "names" ns :ap i "types" ts :ap "values" vs :value v :v (< k (length ns)) :do 
+    (aset a "constant value" (nth k ns))
+    (update-push-aclosure ac :av "current" (+ k 1))
+    (clear-update-eval-aclosure ac :instance (nth k vs))
+
+)
+
+
+
+
+;;;;;;; Может пригодится для function call
+
+(aclosure ac :attribute "opsem" :type "function decl" :instance i :stage nil :do 
+    (update-push-aclosure ac :stage "get function type")
+    (clear-update-eval-aclosure ac :instance (aget i "signature"))
+)
+(aclosure ac :attribute "opsem" :type "function decl" :instance i :stage "get function type" 
+    :value sgn :p (mo "function lit" :av "signature" sgn :av "body" "block") fl
+    (update-push-aclosure ac :stage "exit function decl" :av "function lit" fl)
+    (clear-update-eval-aclosure ac :instance fl :attribute "default type by value")
+)
+(aclosure ac :attribute "opsem" :type "function decl" :instance i :stage "exit function decl" :value tp :agent a :do
+    (aset a "location" (aget i "name") (mo "location" :av "type" tp :av "value" (aget ac "function lit")))
+)
+
+(aclosure ac :attribute "opsem" :type "signature" :instance i :stage nil :do 
+    (update-push-aclosure ac :stage "get variadic parameter")
+    (clear-update-eval-aclosure ac :instance (aget i "parameters") :attribute "type substitution")
+)
+(aclosure ac :attribute "opsem" :type "signature" :instance i :stage "get variadic parameter" :value ps :do
+    (update-push-aclosure ac :stage "get result" :av "parameters" ps)
+    (clear-update-eval-aclosure ac :instance (aget i "variadic parameter") :attribute "type substitution")
+)
+(aclosure ac :attribute "opsem" :type "signature" :instance i :stage "get result" :value vp :do 
+    (update-push-aclosure ac :stage "exit signature" :av "variadic parameter" vp)  ; ac contains "parameters"
+    (clear-update-eval-aclosure ac :instance (aget i "result") :attribute "type substitution")
+)
+(aclosure ac :attribute "opsem" :type "signature" :instance i :stage "exit signature" :value r :do 
+    (mo "signature" :av "parameters" (aget ac "parameters") :av "variadic parameter" (aget ac "variadic parameter") :av "result" r)
+)

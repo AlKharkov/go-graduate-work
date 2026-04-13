@@ -1,7 +1,7 @@
 #|
      Model of the Go language
 
-     Last edit: 04/04/2026
+     Last edit: 10/04/2026
 |#
 
 
@@ -24,11 +24,11 @@
 ;;; Types
 ;;; ================================================
 
-(typedef "type" (uniont "base type" "composite type"))
+(typedef "type" (uniont "primitive type" "composite type"))
 
-(typedef "base type" (uniont "boolean type" "numeric type" "rune type" "string type"))
+(typedef "primitive type" (uniont "bool type" "numeric type" "rune type" "string type"))
 
-(typedef "boolean type" (enumt "bool"))
+(typedef "bool type"    (enumt "bool"))
 (typedef "numeric type" (uniont "int type" "float type" "complex type"))
 (typedef "int type"     (enumt "int" "int8" "int16" "int32" "int64" "byte" 
                                "uint" "uint8" "uint16" "uint32" "uint64" "uintptr"))
@@ -42,68 +42,60 @@
                                   "pointer type" "function type" "method type"
                                   "interface type" "map type" "channel type"))
 
-(mot "array type"   :at "elem type" "type" :at "len" nat)
-(mot "slice type"   :at "elem type" "type")
-(mot "struct type"  :at "fields" (cot :amap "field name" "type"))
-(mot "pointer type" :at "elem type" "type")
+(cot "array type"   :at "elem type" "type" :at "len" nat)
+(cot "slice type"   :at "elem type" "type")
+(cot "struct type"  :at "fields"  (cot :amap "field name" "type")
+                    :at "ordered" (listt "field name"))  ; (static analysis attribute) for the unnamed initiation
+(cot "pointer type" :at "type" "type")
 
 ;; function type omits parameter names (only types matter for type checking)
-(mot "function type" 
+(cot "function type" 
      :at "param types"   (listt "type") 
      :at "variadic type" "type" 
      :at "result types"  (listt "type"))
 
-(mot "method type" 
+(cot "method type" 
      :at "receiver type" "type" 
      :at "param types"   (listt "type") 
      :at "variadic type" "type" 
      :at "result types"  (listt "type"))
 
-(mot "interface type" :at "methods" (mot :amap "method name" "method type"))
-(mot "map type"       :at "key type" "type" :at "elem type" "type")
-(mot "channel type"   :at "elem type" "type")  ; direction is omitted (irrelevant for well-typed programs)
+(cot "interface type" :at "methods"   (cot :amap "method name" "method type"))
+(cot "map type"       :at "key type"  "type" :at "elem type" "type")
+(cot "channel type"   :at "elem type" "type")  ; direction is omitted (irrelevant for well-typed programs)
 
 
 ;;; ================================================
 ;;; Cells and values
 ;;; ================================================
 
-;; A cell is a mutable container that holds a Go value.
+;; A cell is a mutable container that holds a Go value. The cell type is a pointer to its value.
 ;; Variables are bound to cells, not directly to values.
-(mot "cell" :at "value" "Go value")
+(mot "cell" :at "value" "Go value" :at "type" "type")
 
 (typedef "Go value" (uniont "untyped constant" "typed value"))
 
-;; untyped constants have no type until used in context
-(typedef "untyped constant" (uniont bool int real "complex constant" string))
-(mot "complex constant" :at "re" real :at "im" real)
+;; untyped constant
+(typedef "untyped constant" (uniont bool int real "complex constant" string "rune value" "complex value"))  ; (static analysis type)
+(mot "rune value"    :at "value" int :at "unicode" string)
+(mot "complex value" :at "re" real   :at "im" real)
 
+;; typed value
 (mot "typed value" 
-     :at "type" "type" 
-     :at "value" (uniont "nil" "primitive value" "composite value"))
+     :at "type" "type"  ; filled by static analysis stage
+     :at "value" (uniont "nil" "untyped constant" "composite value"))
 
-;; nil is typed; each reference type has its own typed nil
-(mot "nil" :at "type" "type")
-
-;; primitive value
-(typedef "primitive value" (uniont "bool value" "int value" "float value" 
-                                   "string value" "rune value" "complex value"))
-(mot "bool value"    :at "value" bool)
-(mot "int value"     :at "value" int    :at "bit size" (enumt 8 16 32 64))
-(mot "float value"   :at "value" real   :at "bit size" (enumt 32 64))
-(mot "string value"  :at "value" string :at "length" nat)
-(mot "rune value"    :at "value" int    :at "unicode" string)
-(mot "complex value" :at "re" real      :at "im" real :at "bit size" (enumt 64 128))
+;; nil is typed too; each reference type has its own typed nil
+(cot "nil")
 
 ;; composite value (reference typed store additional metadata)
-(typedef "composite value" (uniont "array value" "slice value" "struct value" 
-                                   "map value" "channel value" "function value" 
-                                   "method value" "interface value" "pointer value"))
+(typedef "composite value" (uniont "array value" "slice value" "struct value" "map value" 
+                                   "channel value" "function value" "method value" "interface value"))
 
 ;; array stores elements inline; assignment copies the entire array
 (mot "array value" 
      :at "type"     "array type" 
-     :at "elements" (listt "Go value"))
+     :at "elements" (listt "cell"))
 
 ;; slice is a view into an array; multiple slices can share the same underlying array
 (mot "slice value" 
@@ -115,11 +107,11 @@
 
 (mot "struct value" 
      :at "type"   "struct type" 
-     :at "fields" (cot :amap "field name" "Go value"))
+     :at "fields" (mot :amap "field name" "cell"))
 
 (mot "map value" 
      :at "type"    "map type" 
-     :at "entries" (mot :amap "Go value" "Go value"))
+     :at "entries" (mot :amap "Go value" "cell"))
 
 ;; channel buffers are FIFO queues; send/receive queues hold waiting goroutines
 (mot "channel value" 
@@ -133,7 +125,7 @@
      :at "type"      "function type" 
      :at "signature" "function signature" 
      :at "body"      "block" 
-     :at "closure"   (listt "Go value"))
+     :at "closure"   (mot :amap "variable name" "cell"))
 
 (mot "function signature" 
      :at "parameters"     (listt "param decl") 
@@ -146,7 +138,7 @@
      :at "type"      "method type"
      :at "signature" "method signature" 
      :at "body"      "block" 
-     :at "closure"   (listt "Go value"))
+     :at "closure"   (mot :amap "variable name" "cell"))
 
 (mot "method signature" 
      :at "receiver"       "param decl" 
@@ -158,55 +150,117 @@
      :at "type"  "interface type" 
      :at "value" "typed value")    ; dynamic type is stored inside the typed value
 
-(mot "pointer value" 
-     :at "points to type" "type" 
-     :at "target"         (uniont "cell" "nil"))
-
 
 ;;; ================================================
 ;;; Literals
 ;;; ================================================
 
-(typedef "literal" (uniont "untyped constant" "composite lit" "function lit" "method lit"))
+(typedef "literal" (uniont "typed constant" "composite lit" "function lit" "method lit"))
 
 (typedef "composite lit" (uniont "array lit" "slice lit" "struct lit" "map lit"))
 
+(mot "index & elem" :at "index" nat :at "value" "expression")
+
 (mot "array lit" 
      :at "type"     "array type" 
-     :at "elements" (listt (mot :at "index" nat :at "value" "expression")))
+     :at "elements" (listt "index & elem"))
 
 (mot "slice lit" 
      :at "type"     "slice type" 
-     :at "elements" (listt (mot :at "index" nat :at "value" "expression")))
+     :at "elements" (listt "index & elem"))
+
+(mot "field & value" :at "field" "field name" :at "value" "expression")
 
 (mot "struct lit" 
      :at "type"   "struct type" 
-     :at "fields" (listt (mot :at "field" "field name" :at "value" "expression")))
+     :at "fields" (listt "field & value"))
+
+(mot "key & elem" :at "key" "expression" :at "value" "expression")
 
 (mot "map lit" 
      :at "type"     "map type" 
-     :at "elements" (listt (mot :at "key" "expression" :at "value" "expression")))
+     :at "elements" (listt "key & elem"))
 
 (mot "function lit" 
+     :at "type"      "function type" 
      :at "signature" "function signature" 
      :at "body"      "block")
 
 (mot "method lit" 
-     :at "signature" "method signature"
+     :at "type"      "method type" 
+     :at "signature" "method signature" 
      :at "body"      "block")
 
 
 ;;; ================================================
-;;; Blocks
+;;; Expressions
 ;;; ================================================
 
-(mot "block"
-	:at "statements" (listt "statement")
-	; semantic attributes (filling during static analysis)
-	:at "label positions"  (cot :amap "label name" nat)        ; statements index for each label
-	:at "variable cells"   (cot :amap "variable name" "cell")  ; current cell for each variable (nil if not yet allocated)
-	:at "type definitions" (cot :amap "type name" "type")      ; local type aliases within the block
-)
+;; All expressions contain the "type" attribute, whose value is calculated during the static analysis phase.
+(typedef "expression" (uniont "literal" "variable ref" "(1)" "conversion" "method expr" "selector expr" 
+                              "index expr" "slice expr" "type assertion" "<-1" 
+                              "function call" "unary expression" "binary expression"))
+
+;; represents a use of an already declared variable (not a new declaration)
+(mot "variable ref" :at "name" "variable name" :at "type" "type")
+
+;; affects evaluation order only
+(mot "(1)" :at 1 "expression" :at "type" "type")
+
+(mot "conversion" :at "type" "type" :at "value" "expression")  ; float64(2)
+
+;; method expression returns a function with the receiver as first parameter
+(mot "method expr" :at "receiver type" "type" :at "name" "method name" :at "type" "type")
+
+(mot "selector expr" :at "receiver" "expression" :at "name" "identifier" :at "type" "type")  ; field or method access
+
+(mot "index expr" :at "indexable" "expression" :at "index" "expression" :at "type" "type")  ; indexable is an array, slice, map or string
+
+(mot "slice expr" 
+     :at "slice" "expression"  ; is an array, slice or string
+     :at "low"   "expression" 
+     :at "high"  "expression" 
+     :at "max"   "expression"  ; optional; omitted means cap = len(indexable)
+     :at "type" "slice type")  ; сalculated during the static analysis phase
+
+(mot "type assertion" :at "interface" "expression" :at "type" "type")  ; i.(Type); return type = target type
+
+(mot "<-1" :at 1 "expression" :at "type" "type")  ; receive from channel
+
+(mot "function call" :at "function" "expression" :at "arguments" (listt "expression") :at "type" "type")  ; min(1, 2)
+
+;; unary expressions (using digit notation for operands)
+(typedef "unary expression" (uniont "+1" "-1" "^1" "!1" "*1" "&1"))
+(mot "+1" :at 1 "expression" :at "type" "type")  ; unary plus (no effect)
+(mot "-1" :at 1 "expression" :at "type" "type")  ; unary minus (negation)
+(mot "^1" :at 1 "expression" :at "type" "type")  ; bitwise complement (^)
+(mot "!1" :at 1 "expression" :at "type" "type")  ; logical not
+(mot "*1" :at 1 "expression" :at "type" "type")  ; pointer dereference
+(mot "&1" :at 1 "expression" :at "type" "type")  ; address of
+
+;; binary expressions (digit notation: 1 = left operand, 2 = right operand)
+(typedef "binary expression" (uniont "1||2" "1&&2" "1*2" "1/2" "1%2" "1<<2" "1>>2" 
+                                     "1&2" "1&^2" "1+2" "1-2" "1|2" "1^2" "1==2" 
+                                     "1!=2" "1<2" "1<=2" "1>2" "1>=2"))
+(mot "1||2" :at 1 "expression" :at 2 "expression" :at "type" "type")  ; logical OR
+(mot "1&&2" :at 1 "expression" :at 2 "expression" :at "type" "type")  ; logical AND
+(mot "1*2"  :at 1 "expression" :at 2 "expression" :at "type" "type")  ; multiplication
+(mot "1/2"  :at 1 "expression" :at 2 "expression" :at "type" "type")  ; division
+(mot "1%2"  :at 1 "expression" :at 2 "expression" :at "type" "type")  ; remainder (integers only)
+(mot "1<<2" :at 1 "expression" :at 2 "expression" :at "type" "type")  ; left shift
+(mot "1>>2" :at 1 "expression" :at 2 "expression" :at "type" "type")  ; right shift
+(mot "1&2"  :at 1 "expression" :at 2 "expression" :at "type" "type")  ; bitwise AND
+(mot "1&^2" :at 1 "expression" :at 2 "expression" :at "type" "type")  ; bitwise AND NOT (a &^ b = a & (^b))
+(mot "1+2"  :at 1 "expression" :at 2 "expression" :at "type" "type")  ; addition
+(mot "1-2"  :at 1 "expression" :at 2 "expression" :at "type" "type")  ; subtraction
+(mot "1|2"  :at 1 "expression" :at 2 "expression" :at "type" "type")  ; bitwise OR
+(mot "1^2"  :at 1 "expression" :at 2 "expression" :at "type" "type")  ; bitwise XOR
+(mot "1==2" :at 1 "expression" :at 2 "expression" :at "type" "type")  ; equality
+(mot "1!=2" :at 1 "expression" :at 2 "expression" :at "type" "type")  ; inequality
+(mot "1<2"  :at 1 "expression" :at 2 "expression" :at "type" "type")  ; less than
+(mot "1<=2" :at 1 "expression" :at 2 "expression" :at "type" "type")  ; less than or equal
+(mot "1>2"  :at 1 "expression" :at 2 "expression" :at "type" "type")  ; greater than
+(mot "1>=2" :at 1 "expression" :at 2 "expression" :at "type" "type")  ; greater than or equal
 
 
 ;;; ================================================
@@ -229,66 +283,20 @@
 
 
 ;;; ================================================
-;;; Expressions
+;;; Blocks
 ;;; ================================================
 
-(typedef "expression" (uniont "literal" "conversion" "method expr" "selector expr" 
-                              "index expr" "slice expr" "type assertion" "<-1" 
-                              "function call" "unary expression" "binary expression"))
-
-(mot "conversion" :at "type" "type" :at "value" "expression")  ; float64(2)
-
-;; method expression returns a function with the receiver as first parameter
-(mot "method expr" :at "receiver type" "type" :at "name" "method name")
-
-(mot "selector expr" :at "receiver" "expression" :at "name" "identifier")  ; field or method access
-
-(mot "index expr" :at "indexable" "expression" :at "index" "expression")  ; indexable is an array, slice, map or string
-
-(mot "slice expr" 
-     :at "slice" "expression"  ; is an array, slice or string
-     :at "low"   "expression" 
-     :at "high"  "expression" 
-     :at "max"   "expression") ; optional; omitted means cap = len(indexable)
-
-(mot "type assertion" :at "interface" "expression" :at "type" "type")  ; i.(Type)
-
-(mot "<-1" :at 1 "expression")  ; receive from channel
-
-(mot "function call" :at "function" "expression" :at "arguments" (listt "expression"))  ; min(1, 2)
-
-;; unary expressions (using digit notation for operands)
-(typedef "unary expression" (uniont "+1" "-1" "^1" "!1" "*1" "&1"))
-(mot "+1" :at 1 "expression")  ; unary plus (no effect)
-(mot "-1" :at 1 "expression")  ; unary minus (negation)
-(mot "^1" :at 1 "expression")  ; bitwise complement (^)
-(mot "!1" :at 1 "expression")  ; logical not
-(mot "*1" :at 1 "expression")  ; pointer dereference
-(mot "&1" :at 1 "expression")  ; address of
-
-;; binary expressions (digit notation: 1 = left operand, 2 = right operand)
-(typedef "binary expression" (uniont "1||2" "1&&2" "1*2" "1/2" "1%2" "1<<2" "1>>2" 
-                                     "1&2" "1&^2" "1+2" "1-2" "1|2" "1^2" "1==2" 
-                                     "1!=2" "1<2" "1<=2" "1>2" "1>=2"))
-(mot "1||2" :at 1 "expression" :at 2 "expression")  ; logical OR
-(mot "1&&2" :at 1 "expression" :at 2 "expression")  ; logical AND
-(mot "1*2"  :at 1 "expression" :at 2 "expression")  ; multiplication
-(mot "1/2"  :at 1 "expression" :at 2 "expression")  ; division
-(mot "1%2"  :at 1 "expression" :at 2 "expression")  ; remainder (integers only)
-(mot "1<<2" :at 1 "expression" :at 2 "expression")  ; left shift
-(mot "1>>2" :at 1 "expression" :at 2 "expression")  ; right shift
-(mot "1&2"  :at 1 "expression" :at 2 "expression")  ; bitwise AND
-(mot "1&^2" :at 1 "expression" :at 2 "expression")  ; bitwise AND NOT (a &^ b = a & (^b))
-(mot "1+2"  :at 1 "expression" :at 2 "expression")  ; addition
-(mot "1-2"  :at 1 "expression" :at 2 "expression")  ; subtraction
-(mot "1|2"  :at 1 "expression" :at 2 "expression")  ; bitwise OR
-(mot "1^2"  :at 1 "expression" :at 2 "expression")  ; bitwise XOR
-(mot "1==2" :at 1 "expression" :at 2 "expression")  ; equality
-(mot "1!=2" :at 1 "expression" :at 2 "expression")  ; inequality
-(mot "1<2"  :at 1 "expression" :at 2 "expression")  ; less than
-(mot "1<=2" :at 1 "expression" :at 2 "expression")  ; less than or equal
-(mot "1>2"  :at 1 "expression" :at 2 "expression")  ; greater than
-(mot "1>=2" :at 1 "expression" :at 2 "expression")  ; greater than or equal
+(mot "block"
+	:at "statements" (listt "statement")
+	
+     ;; semantic attributes
+     ; filled during static analysis
+	:at "label positions"  (cot :amap "label name" nat)        ; statements index for each label
+     :at "all variables"    (listt "variable name")             ; all variable names found in this block
+     :at "decl variables"   (listt "variable name")             ; variable names that are declared in this block
+     ; filled during runtime
+     :at "variable cells"   (cot :amap "variable name" "cell")  ; cells for all variables before declared in this block (nil if not allocated)
+)
 
 
 ;;; ================================================

@@ -1,7 +1,7 @@
 #|
 	Operational semantics for the Go language
 
-    Last edit: 04/04/2026
+    Last edit: 10/04/2026
 |#
 
 
@@ -11,11 +11,11 @@
 
 (mot "env"  :at "agents" (listt "agent"))
 (mot "agent"
-    :at "constant value" (cot :amap "constant name" "Go value")
-    :at "variable cell"  (cot :amap "identifier" "cell")              ; The relation of names to their memory locations
-    :at "function value" (cot :amap "function name" "function value")
-    :at "method value"   (cot :amap "method name" "method value")
-    :at "type"           (cot :amap "type name" "type")               ; Types created in the program
+    :at "constant value" (mot :amap "constant name" "Go value")
+    :at "variable cell"  (mot :amap "variable name" "cell")           ; The relation of names to their memory locations
+    :at "function value" (mot :amap "function name" "function value")
+    :at "method value"   (mot :amap "type name" (mot :amap "method name" "method value"))
+    :at "type"           (mot :amap "type name" "type")               ; Types created in the program
     :at "value"          "Go value")                                  ; The last value calculated by the agent
 
 
@@ -24,15 +24,6 @@
 ;;; ================================================
 
 (aclosure ac :attribute "opsem::rvalue" :type "Go value" :instance i :do i)
-
-(aclosure ac :attribute "opsem::rvalue" :type "identifier" :instance i :do 
-    (match :v (aget a "constant value" i) nil :exit (aget a "constant value" i) 
-           :v (aget a "variable cell"  i) nil :exit (aget (aget a "variable cell" i) "value") 
-           :v (aget a "function value" i) nil :exit (aget a "function value" i) 
-           :v (aget a "method value"   i) nil :exit (aget a "method value" i)))
-
-(aclosure ac :attribute "opsem::lvalue" :type "variable name" :instance i :agent a 
-    :do (aget a "variable cell" i))
 
 
 ;;; ================================================
@@ -47,19 +38,22 @@
 )
 ; Заполняет массив значениями по умолчанию. Отправляет вычислять явно заданные значения.
 (aclosure ac :attribute "opsem::rvalue" :type "array lit" :instance i :stage "fill defaults" 
-    :value v :ap i "elements" es :do 
-    (match :v (null es) T :do (mo "array value" :av "type" (aget i "type") :av "elements" nil) 
-    :exit (update-push-aclosure ac :stage "evaluating" :av "left" es :av "array" (make-list (aget i "type" "len") v))
+    :ap i "elements" es :ap i "type" at :ap at "elem type" et 
+    :ap (mo "pointer type" :av "type" et) ct :value v :do 
+    (match :v (null es) T :do (mo "array value" :av "type" at :av "elements" nil) 
+    :exit (update-push-aclosure ac :stage "evaluating" :av "left" es 
+              :av "array" (let ((c nil)) (dotimes (k (aget at "len") c) 
+              (setf c (cons (mo "cell" :av "value" v :av "type" ct) c))))) ; массив из "len" ячеек памяти
           (clear-update-eval-aclosure ac :instance (aget (car es) "value")))
 )
 ; Изменяет значение очередного элемента массива.
 ; Если все значения вычислены, то создаёт и возвращает значение массива. Иначе отправляет вычислять далее.
 (aclosure ac :attribute "opsem::rvalue" :type "array lit" :instance i :stage "evaluating" 
     :ap ac "left" left :ap ac "array" arr :value v :ap (car left) "index" k :do 
-    (let ((c arr)) (dotimes (j k (setf (car c) v)) (setf c (cdr c))))
+    (let ((c arr)) (dotimes (j k (setf (car c) "value" v)) (setf c (cdr c))))  ; изменяем k-й элемент списка
     (match :v (null (cdr left)) T :do (mo "array value" :av "type" (aget i "type") :av "elements" arr)
     :exit (update-push-aclosure ac :av "left" (cdr left) :av "array" arr)
-          (clear-update-eval-aclosure ac :instance (car (cdr left))))
+          (clear-update-eval-aclosure ac :instance (aget (car (cdr left)) "value")))
 )
 
 ;; slice lit
@@ -70,262 +64,336 @@
     (clear-update-eval-aclosure ac :attribute "default value by type" :instance (aget i "type" "elem type"))
 )
 ; По максимальному индексу создаёт массив. Отправляет вычислять явно заданные значения.
+; Возвращает список всех вычисленных значений.
 (aclosure ac :attribute "opsem::rvalue" :type "slice lit" :instance i :stage "fill defaults" 
-    :value v :ap i "elements" es :p 0 m :do 
+    :value v :ap i "elements" es :p -1 m :ap (mo "pointer type" 
+    :av "type" (mo "pointer type" :av "type" (aget i "type" "elem type"))) ct :do 
     (dolist (e es) (let ((k (aget e "index"))) (if (> k m) (setf m k))))
     (match :v (null es) T :do nil
-    :exit (update-push-aclosure ac :stage "evaluating" :av "left" es :av "array" (make-list (1+ m) v))
-          (clear-update-eval-aclosure ac :instance (aget (car es) "value")))
+    :exit (update-push-aclosure ac :stage "evaluating" :av "left" es :av "array" 
+        (let ((c nil)) (dotimes (k (1+ m) c) (setf c (cons (mo "cell" :av "value" v :av "type" ct) c)))))
+        (clear-update-eval-aclosure ac :instance (aget (car es) "value")))
 )
 ; Изменяет значение очередного элемента среза.
 ; Если все значения вычислены, то возвращает их в правильном порядке. Иначе отправляет вычислять далее.
 (aclosure ac :attribute "opsem::rvalue" :type "slice lit" :instance i :stage "evaluating" 
     :ap ac "left" left :ap ac "array" arr :value v :p (aget (car left) "index") k :do 
-    (let ((c arr)) (dotimes (j k (setf (car c) v)) (setf c (cdr c))))
+    (let ((c arr)) (dotimes (j k (setf (car c) "value" v)) (setf c (cdr c))))
     (match :v (null left) T :do (reverse arr) 
     :exit (update-push-aclosure ac :av "left" (cdr left) :av "array" arr)
-          (clear-update-eval-aclosure ac :instance (car (cdr left))))
+          (clear-update-eval-aclosure ac :instance (aget (car (cdr left)) "value")))
 )
 ; Создаёт и возвращает значение среза.
 (aclosure ac :attribute "opsem::rvalue" :type "slice lit" :instance i :stage "build value" 
     :value arr :ap i "type" stp :ap stp "elem type" etp :p (length arr) n :do 
     (mo "slice value" 
         :av "type" (aget i "type")
-        :av "array" (mo "array value" :av "type" (mo "array type" :av "elem type" etp :av "len" n) :av "elements" arr)
+        :av "array" (mo "array value" :av "type" (mo "array type" :av "elem type" etp :av "len" n) 
+                                      :av "elements" arr)
         :av "offset" 0 
         :av "length" n
         :av "capacity" n)
 )
 
-
-
-
-
-
-
 ;; struct lit
+; Отправляет вычислять значения полей по умолчанию. Отправляет вычислять явно указанные значения полей.
 (aclosure ac :attribute "opsem::rvalue" :type "struct lit" :instance i :stage nil 
-    :ap i "fields" fs :ap i "values" vs :do 
-    (update-push-aclosure ac :stage "create value")
-    (match :v (null vs) T :do nil :exit 
-        (update-push-aclosure ac :stage "evaluating" :av "left" (cdr vs) :av "done" nil)
-        (clear-update-eval-aclosure ac :instance (car fs)))
+    :p (aget i "type" "fields") tfs :p (attributes tfs) tns :do 
+    (update-push-aclosure ac :stage "eval field values")
+    (match :v (null ns) T :do nil 
+    :exit (update-push-aclosure ac :stage "filling defaults" 
+                                   :av "type field names" tns 
+                                   :av "struct value" (mo :amap "field name" "cell"))
+          (clear-update-eval-aclosure ac :attribute "default value by type" 
+                                         :instance (aget tfs (car tns))))
 )
-; Вычисляет значение поля. Возвращает список вычисленных значений.
-(aclosure ac :attribute "opsem::rvalue" :type "struct lit" :instance i :stage "evaluating" 
-    :ap ac "left" left :ap ac "done" d :value v :p (cons v d) lst :do 
-    (match :v (null left) T :do lst 
-    :exit (update-push-aclosure ac :av "left" (cdr left) :av "done" lst)
-          (clear-update-eval-aclosure ac :instance (car left)))
-)
-; Если значения всех полей указаны явно, то создаёт и возвращает значение экземпляра структуры.
-; Иначе отправляет вычислять значение поля по умолчанию.
-(aclosure ac :attribute "opsem::rvalue" :type "struct lit" :instance i :stage "create value" 
-    :value lst :ap i "type" stp :ap i "fields" fs :ap (cot :amap "field name" "Go value") fv :do 
-    (if (null fs) (setf fs (aget stp "ordered")))  ; если заданы без имён, то имена полей опеределяются порядком
-    (setf left (do ((names fs (cdr names)) (values (reverse lst) (cdr values))) 
-                   ((null values) names) 
-                   (setf fv (aset fv (car names) (car values)))))
-    (match :v (null left) T :do (mo "struct value" :av "type" stp :av "fields" fv)
-    :exit (update-push-aclosure ac :stage "filling defaults" :av "left" left :av "done" fv)
-          (clear-update-eval-aclosure ac :attribute "default value by type" :instance (aget stp "fields" (car left))))
-)
-; Вычисляет значение поля по умолчанию. Создаёт и возвращает значение экземпляра структуры.
+; Если всем полям установлены значения, то возвращает список из них. Иначе отправляет вычислять значение очередного поля.
 (aclosure ac :attribute "opsem::rvalue" :type "struct lit" :instance i :stage "filling defaults" 
-    :ap ac "left" left :av ac "done" d :value v :p (aset d (car left) v) fv :ap i "type" stp :do 
-    (match :v (null (cdr left)) T :do (mo "struct value" :av "type" stp :av "fields" fv)
-    :exit (update-push-aclosure ac :av "left" (cdr left) :av "done" fv)
-          (clear-update-eval-aclosure ac :attribute "default value by type" :instance (aget stp "fields" (car (cdr left)))))
+    :ap ac "type field names" tns :ap ac "struct value" sv :value dv 
+    :p (mo "pointer type" :av "type" (mo "pointer type" :av "type" (aget i "type" "fields" (car tns)))) ct :do 
+    (aset sv (car tns) (mo "cell" :av "value" dv :av "type" ct))  ; устанавливает значение по умолчанию очередного поля структуры
+    (match :v (null tns) T :do sv 
+    :exit (update-push-aclosure ac :av "type field names" (cdr tns) :av "struct value" sv)
+          (clear-update-eval-aclosure ac :attribute "default value by type" 
+                                         :instance (aget (aget i "type" "fields") (car (cdr tns)))))
+)
+; Если значение никакого поля явно не задано, то возвращает пустой список.
+; Иначе отправляет вычислять вычислять значения явно заданных полей структуры.
+(aclosure ac :attribute "opsem::rvalue" :type "struct lit" :instance i :stage "eval field values" 
+    :value sv :ap i "fields" fs :p (attributes fs) ns :do 
+    (match :v (null ns) T :do nil 
+    :exit (update-push-aclosure ac :stage "evaluating" :av "names" ns :av "struct value" sv)
+          (clear-update-eval-aclosure ac :instance (aget fs (car ns))))
+)
+; Устанавливает значение очередного явно заданного поля в значение структуры.
+; Если все значения полей вычислены, то возвращает их список. Иначе отправляет вычислять значение очередного поля.
+(aclosure ac :attribute "opsem::rvalue" :type "struct lit" :instance i :stage "evaluating" 
+    :ap ac "names" ns :ap ac "struct value" sv :ap i "fields" fs :value v :do 
+    (aset sv (car ns) "value" v)
+    (match :v (null (cdr ns)) T :do sv 
+    :exit (update-push-aclosure ac :av "names" (cdr ns) :av "struct value" sv)
+          (clear-update-eval-aclosure ac :instance (aget fs (car (cdr ns)))))
+)
+; Создаёт и возвращает значение структуры.
+(aclosure ac :attribute "opsem::rvalue" :type "struct lit" :instance i :stage "build value" 
+    :value sv :do (mo "struct value" :av "type" (aget i "type") :av "fields" sv)
+)
+
+;; map lit
+; Отправляет вычислять записи карты (т.е. пары ключ-значение).
+(aclosure ac :attribute "opsem::rvalue" :type "map lit" :instance i :stage nil 
+    :ap i "elements" es :do 
+    (update-push-aclosure ac :stage "build value")
+    (match :v (null es) T :do nil 
+    :exit (update-push-aclosure ac :stage "evaluating" 
+                                   :av "entries" (mo :amap "Go value" "cell") 
+                                   :ap "elements" (cdr es))
+          (clear-update-eval-aclosure ac :instance (car es) :av "elem type" (aget i "type" "elem type")))
+)
+; Добавляет вычисленную запись. Если все записи вычислены, то возвращает их список. Иначе отправляет вычислять далее.
+(aclosure ac :attribute "opsem::rvalue" :type "map lit" :instance i :stage "evaluating" 
+    :ap ac "entries" ent :ap ac "elements" es :value ke :do 
+    (aset ent (aget ke "key") (aget ke "value"))
+    (match :v (null es) T :do ent 
+    :exit (update-push-aclosure ac :av "entries" ent :av "elements" (cdr es))
+          (update-push-aclosure ac :instance (car es)))
+          (clear-update-eval-aclosure ac :instance (aget (car es) "key") 
+                                         :av "elem type" (aget i "type" "elem type"))
+)
+; Создаёт и возвращает значение карты.
+(aclosure ac :attribute "opsem::rvalue" :type "map lit" :instance i :stage "build value" 
+    :value ent :do (mo "map value" :av "type" (aget i "type") :av "entries" ent)
+)
+; Отправляет вычислять значение записи.
+(aclosure ac :attribute "opsem::rvalue" :type "keyed elem" :instance i :stage nil 
+    :value k :do (update-push-aclosure ac :stage "eval value" :av "key" k)
+                 (clear-update-eval-aclosure ac :instance (aget i "value"))
+)
+; Создаёт и возвращает запись карты.
+(aclosure ac :attribute "opsem::rvalue" :type "keyed elem" :instance i :stage "eval value" 
+    :ap ac "key" k :ap ac "elem type" et :value v :do (mo "keyed value" :av "key" k :av "value" 
+        (mo "cell" :av "value" v :av "type" (mo "pointer type" :av "type" et)))
+)
+
+;; function lit
+; Создаёт и возвращает значение функции.
+(aclosure ac :attribute "opsem::rvalue" :type "function lit" :instance i 
+    :agent a :p (aget i "body" "all variables") ns :p nil c :do 
+    (dolist (item ns) (setf c (aset c (aget a "variable cell" item))))  ; сохраняет ячейки памяти всех переменных до блока
+    (mo "function value" :av "type"      (aget i "type")
+                         :av "signature" (aget i "signature")
+                         :av "body"      (aget i "body")
+                         :av "closure"   c)
 )
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-;;; Blocks
-(aclosure ac :attribute "opsem" :type "block" :instance i :stage nil :do
-    (update-push-aclosure ac :stage "variable handling" :av "current" (attributes (aget i "variable location")))
-    (clear-update-eval-aclosure ac :stage "evaluating statement")
-)
-(aclosure ac :attribute "opsem" :type "block" :instance i :stage "evaluating statement" 
-    :ap i "statements" sts :v (null sts) nil :do
-    (update-push-aclosure ac :av "statements" (cdr sts))
-    (clear-update-eval-aclosure ac :instance (car sts) :av "block" i)  ; Для добавления затенённых в "block"->"variable location"
-)
-(aclosure ac :attribute "opsem" :type "block" :instance i :stage "variable handling" :agent a
-    :ap i "variable location" vl :ap ac "current" lst :v (null lst) nil :p (car lst) name :do 
-    (aset a "location" name (aget vl name))  ; Возвращаем прежнее значение переменной
-    (clear-update-eval-aclosure ac :av "current" (cdr lst))
+;; method lit
+; Создаёт и возвращает значение метода.
+(aclosure ac :attribute "opsem::rvalue" :type "method lit" :instance i 
+    :agent a :p (aget i "body" "all variables") ns :p nil c :do 
+    (dolist (item ns) (setf c (aset c (aget a "variable cell" item))))  ; сохраняет ячейки памяти всех переменных до блока
+    (mo "method value"  :av "type"      (aget i "type")
+                        :av "signature" (aget i "signature")
+                        :av "body"      (aget i "body")
+                        :av "closure"   c)
 )
 
 
+;;; ================================================
 ;;; Declarations
-(aclosure ac :attribute "opsem" :type "type decl" :instance i :agent a :do (aset a "type" (aget i "name") (aget i "type")))
+;;; ================================================
 
-(aclosure ac :attribute "opsem" :type "const decl" :instance i :stage nil :do 
-    (update-push-aclosure ac :stage "declarating" :av "current" 0)
-    (clear-update-eval-aclosure ac :instance (car (aget i "values")))
-)
-(aclosure ac :attribute "opsem" :type "const decl" :instance i :stage "declarating" :agent a 
-    :ap ac "current" k :ap i "names" ns :ap i "types" ts :ap "values" vs :value v :v (< k (length ns)) :do 
-    (aset a "constant value" (nth k ns))
-    (update-push-aclosure ac :av "current" (+ k 1))
-    (clear-update-eval-aclosure ac :instance (nth k vs))
-
+;; type decl
+(aclosure ac :attribute "opsem" :type "type decl" :instance i :agent a :do 
+    (aset a "type" (aget i "name") (aget i "type"))
 )
 
-
-(mot "const decl" :at "names" (listt "constant name") :at "types" (listt "type") :av "values" (listt "expression"))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-(aclosure ac :attribute "opsem" :type "var decl" :instance i :stage nil :do 
-    (update-push-aclosure ac :stage "declarating" :av "current" 0)
-    (clear-update-eval-aclosure ac :instance (car (aget i "values")))
+;; var decl
+; Если задаются без значений, то вычилсяем значения по типам переменеых.
+; Иначе все переменные задаются с явно указанными значениями.
+(aclosure ac :attribute "opsem" :type "var decl" :instance i :stage nil 
+    :ap i "names" ns :ap i "values" vs :ap i "types" ts :do 
+    (match :v (null vs) T 
+    :do (update-push-aclosure ac :stage "declarating defaults" :av "names" ns :av "types" (cdr ts))
+        (clear-update-eval-aclosure ac :attribute "default value by type" :instance (car ts))
+    :exit (update-push-aclosure ac :stage "evaluating values" 
+        :av "names" ns :av "types" ts :av "values" (cdr vs))
+        (clear-update-eval-aclosure ac :instance (car vs))
+    )
 )
-(aclosure ac :attribute "opsem" :type "var decl" :instance i :agent a :stage "declarating" 
-    :ap ac "current" k :ap i "names" ns :p (length ns) n :v (< k n) T :p (nth k ns) name :p (nth k (aget i "types")) tp :value v :do 
-    (aset a "location" name (mo "location" :av "type" tp :av "value" v))
-    (update-push-aclosure ac :stage "declarating" :av "current" (+ k 1) :av "len" n)
-    (clear-update-eval-aclosure ac :instance (nth (+ k 1) (aget i "values")))
+; Декларируем очередную переменную по значению по умолчанию соответсвующего типа.
+(aclosure ac :attribute "opsem" :type "var decl" :instance i :stage "declarating defaults" 
+    :ap ac "names" ns :ap ac "types" ts :value v :agent a :do 
+    (aset a "variable cell" (car ns) (mo "cell" :av "value" v 
+        :av "type" (mo "pointer type" :av "type" (car ts))))
+    (match :v (null ts) T 
+    :exit (update-push-aclosure ac :av "names" (cdr ns) :av "types" (cdr ts))
+          (clear-update-eval-aclosure ac :attribute "default value by type" :instance (car ts)))
+)
+; Декларируем очередную переменную по явно заданному значению.
+(aclosure ac :attribute "opsem" :type "var decl" :instance i :stage "evaluating values" 
+    :ap ac "names" ns :ap ac "values" vs :ap ac "types" ts :value v :agent a :do 
+    (aset a "variable cell" (car ns) (mo "cell" :av "value" v :av "type" (car ts)))
+    (match :v (null vs) T 
+    :exit (update-push-aclosure ac :av "names" (cdr ns) :av "types" (cdr ts) :av "values" (cdr vs))
+          (clear-update-eval-aclosure ac :instance (car vs)))
 )
 
+;; function decl
 (aclosure ac :attribute "opsem" :type "function decl" :instance i :stage nil :do 
-    (update-push-aclosure ac :stage "get function type")
-    (clear-update-eval-aclosure ac :instance (aget i "signature"))
+    (update-push-aclosure ac :stage "decl")
+    (clear-update-eval-aclosure ac :instance (aget i "value"))
 )
-(aclosure ac :attribute "opsem" :type "function decl" :instance i :stage "get function type" 
-    :value sgn :p (mo "function lit" :av "signature" sgn :av "body" "block") fl
-    (update-push-aclosure ac :stage "exit function decl" :av "function lit" fl)
-    (clear-update-eval-aclosure ac :instance fl :attribute "default type by value")
-)
-(aclosure ac :attribute "opsem" :type "function decl" :instance i :stage "exit function decl" :value tp :agent a :do
-    (aset a "location" (aget i "name") (mo "location" :av "type" tp :av "value" (aget ac "function lit")))
+(aclosure ac :attribute "opsem" :type "function decl" :instance i :stage "decl" 
+    :value v :agent a :do (aset a "function value" (aget i "name") v)
 )
 
-(aclosure ac :attribute "opsem" :type "signature" :instance i :stage nil :do 
-    (update-push-aclosure ac :stage "get variadic parameter")
-    (clear-update-eval-aclosure ac :instance (aget i "parameters") :attribute "type substitution")
+;; method decl
+(aclosure ac :attribute "opsem" :type "method decl" :instance i :stage nil :do 
+    (update-push-aclosure ac :stage "decl")
+    (clear-update-eval-aclosure ac :instance (aget i "value"))
 )
-(aclosure ac :attribute "opsem" :type "signature" :instance i :stage "get variadic parameter" :value ps :do
-    (update-push-aclosure ac :stage "get result" :av "parameters" ps)
-    (clear-update-eval-aclosure ac :instance (aget i "variadic parameter") :attribute "type substitution")
-)
-(aclosure ac :attribute "opsem" :type "signature" :instance i :stage "get result" :value vp :do 
-    (update-push-aclosure ac :stage "exit signature" :av "variadic parameter" vp)  ; ac contains "parameters"
-    (clear-update-eval-aclosure ac :instance (aget i "result") :attribute "type substitution")
-)
-(aclosure ac :attribute "opsem" :type "signature" :instance i :stage "exit signature" :value r :do 
-    (mo "signature" :av "parameters" (aget ac "parameters") :av "variadic parameter" (aget ac "variadic parameter") :av "result" r)
+(aclosure ac :attribute "opsem" :type "method decl" :instance i :stage "decl" 
+    :value v :agent a :do (aset a "method value" (aget i "value" "type" "receiver type") (aget i "name") v)
 )
 
-(mot "signature" :at "parameters" (listt "parameter decl") :at "variadic parameter" "variadic decl" :at "result" (uniont (listt "type") (listt "parameter decl")))
-(mot "function decl" :at "name" "function name" :at "signature" "signature" :at "body" "block")
-(mot "function lit" :at "signature" "signature" :at "body" "block")  ; func(a int) bool { return a < 0 }
-(mot "function type" :at "signature" "type signature")
+
+;;; ================================================
+;;; Blocks
+;;; ================================================
+
+; Сохраняет ячейки всех переменных, встречающихся в этом блоке. При декларации будут созданы новые ячейки.
+(aclosure ac :attribute "opsem" :type "block" :instance i :stage nil 
+    :ap i "statements" sts :ap i "decl variables" avs :p nil dv :agent a :do 
+    (aset i "variable cells" (dolist 
+        (item avs (reverse dv)) 
+        (setf dv (cons (aget a "variable cell" item) dv))))
+    (update-push-aclosure ac :stage "variable back")
+    (clear-update-eval-aclosure ac :stage "evaluating statement" :av "statements" sts)
+)
+; Вычисляет очередной оператор блока (очередную инструкцию блока).
+(aclosure ac :attribute "opsem" :type "block" :instance i :stage "evaluating statement" 
+    :ap ac "statements" sts :v (null sts) nil :do 
+    (update-push-aclosure ac :av "statements" (cdr sts) :av "block" i)
+    (clear-update-eval-aclosure ac :instance (car sts))
+)
+; Восстанавливает старые ячейки памяти декларированным в блоке (важны только затенённые) переменным.
+(aclosure ac :attribute "opsem" :type "block" :instance i :stage "variable back" :do 
+    (dolist (item (aget i "decl variables")) (aset a "variable cell" item (aget item "variable cells")))
+)
 
 
+;;; ================================================
 ;;; Expressions
-;; Operands
-(aclosure ac "opsem" "composite literal" i :do ...)  ; TODO
-(aclosure ac "opsem" "keyed element" i :do i)
-(aclosure ac "opsem" "function literal" i :do ...)  ; TODO...
-(aclosure ac "opsem" "operand[T]" i :do
-    ; Создать новый объект, с подставленным типом
-    ; Limitations prohibit - предварительно вычисляем
+;;; ================================================
+
+;; variable ref
+(aclosure ac :attribute "opsem::lvalue" :type "variable ref" :instance i :agent a :do 
+    (aget a "variable cell" i)
 )
-(aclosure ac "opsem::any" "(expression)" i :ap i "expression" e :do (clear-update-eval-aclosure ac "instance" e))
-;primary expressions
-(aclosure ac "opsem::any" "conversion" i :stage nil
-    :ap i "expression" e :do
-    (update-push-aclosure ac :stage "type")
-    (clear-update-eval-aclosure ac :instance e)
-)
-(aclosure ac "opsem::any" "conversion" i :stage "type" :value e
-    :ap i "type" t :do
-    (update-push-aclosure ac :stage "access" :av "expression" e)
-    (clear-update-eval-aclosure ac :instance t)
-)
-(aclosure ac "opsem::any" "conversion" i :stage "access" :value t
-    :ap ac "expression" e :do
-    ; Собственно приведение типа
-    ; TODO
+(aclosure ac :attribute "opsem::rvalue" :type "variable ref" :instance i :agent a :do 
+    (aget (aget a "variable cell" i) "value")
 )
 
-(aclosure "opsem::rvalue" "method expression" i ac ...)  ; TODO
-;(mot "struct" :at "fields" (listt "field valued"))                   ; Куда это?
-;(mot "field valued" :at "name" "identifier" :at "value" "Go value")  ; Определение экземпляра структурного объекта
-(aclosure ac "opsem" "selector expression" i :stage nil :do
-    (update-push-aclosure ac "stage" "access")
-    (clear-update-eval-aclosure ac "instance" (aget i "expression"))
-)
-(aclosure ac "opsem" "selector expression" i :stage "access" :value e :ap i "selector" name :do
-    ; To be continued...
+;; parenthized expression
+(aclosure ac :attribute "opsem::rvalue" :type "(1)" :instance i :do 
+    (clear-update-eval-aclosure ac :instance (aget i 1))
 )
 
-(alcosure ac "opsem::lvalue" "index expr" i :stage nil :ap i "list" l :do
-    (update-push-aclosure ac :stage "index evaluation")
-    (clear-update-eval-aclosure ac :instance l)
+;; conversion
+(aclosure ac :attribute "opsem::rvalue" :type "conversion" :instance i :stage nil :do 
+    (update-push-aclosure ac :stage "conversion")
+    (clear-update-eval-aclosure ac :instance (aget i "value"))
 )
-(alcosure ac "opsem::lvalue" "index expr" i :stage "index evaluation" :value l :ap i "index" ind :do
-    (update-push-aclosure ac :stage "access" :av "list" l)
-    (clear-update-eval-aclosure ac :attribute "opsem::rvalue" :instance ind)
+(aclosure ac :attribute "opsem::rvalue" :type "conversion" :instance i :stage "conversion" 
+    :value v :do ; To be continued
 )
-(aclosure ac "opsem::lvalue" "index expr" i :stage "access"
-    :value ind :ap ac "list" l :do
-    ; TODO <- array decl
+
+;; method expression
+(aclosure ac :attribute "opsem::rvalue" :type "method expr" :instance i 
+    :agent a :p (aget a "method value" (aget i "receiver type") (aget i "name")) mv 
+    :ap mv "type" mt :ap mv "signature" ms :do 
+    (mo "function value" 
+        :av "type" (mo "function type" 
+            :av "param types"   (cons (aget mt "receiver type") (aget mt "param types"))
+            :av "variadic type" (aget mt "variadic type")
+            :av "result type"   (aget mt "result types"))
+        :av "signature" (mo "function signature" 
+            :av "parameters"     (cons (aget ms "receiver") (aget ms "parameters"))
+            :av "variadic param" (aget ms "variadic param")
+            :av "result"         (aget ms "result"))
+        :av "body" (aget mv "body")
+        :av "closure" (aget mv "closure"))
 )
-(aclosure ac "opsem::rvalue" "index expr" i :do ...)  ; TODO
+
+;; selector expression
+; Если слева от точки стоит имя пользовательского типа (в том числе интерфейса), то вычислять ничего не нужно
+(aclosure ac :attribute "opsem::rvalue" :type "selector expr" :instance i :stage nil
+    :ap i "receiver" r :do 
+    (update-push-aclosure ac :stage "return value")
+    (match :v (and (is-instance r "identifier") (aget a "type" r)) T 
+    :do   (aget a "method value" r (aget i "name"))
+    :exit (clear-update-eval-aclosure ac :instance (aget i "receiver")))
+)
+; Иначе слева стоит структура, или указатель на стркутуру, который сначала нужно разыменовать.
+(aclosure ac :attribute "opsem::rvalue" :type "selector expr" :instance i :stage "return value" 
+    :value r :ap r "type" tr :ap i "name" n :do 
+    (nmatch :v tr "struct type"  :exit (aget r "fields" n "value") 
+            :v tr "pointer type" :exit (aget r "target" "value" "fields" n "value"))
+)
+
+; В lvalue позиции может быть только структура (или указатель на неё)
+(aclosure ac :attribute "opsem::lvalue" :type "selector expr" :instance i :stage nil :do 
+    (update-push-aclosure ac :stage "return value")
+    (clear-update-eval-aclosure ac :instance (aget i "receiver"))
+)
+(aclosure ac :attribute "opsem::lvalue" :type "selector expr" :instance i :stage "return value" 
+    :value r :ap i "name" n :ap r "type" tr :do 
+    (nmatch :v tr "struct type" :exit  (aget r "fields" n)
+            :v tr "pointer type" :exit (aget r "target" "value" "fields" n))
+)
+
+;; index expression
+; Вычисляет индексированное хранилище (массив, срез, карта или строка)
+(aclosure ac :attribute "opsem::rvalue" :type "index expr" :instance i :stage nil :do 
+    (update-push-aclosure ac :stage "eval index")
+    (clear-update-eval-aclosure ac :instance (aget i "indexable"))
+)
+; Вычисляет индекс, по которому нужно будет взять элемент
+(aclosure ac :attribute "opsem::rvalue" :type "index expr" :instance i :stage "eval index" 
+    :value indl :do 
+    (update-push-aclosure ac :stage "return value" :av "indexable" indl)
+    (clear-update-eval-aclosure ac :instance (aget i "index"))
+)
+; Возвращает взятый по индексу элемент
+(aclosure ac :attribute "opsem::rvalue" :type "index expr" :instance i :stage "return value" 
+    :value index :ap ac "indexable" indl :ap indl "type" it :do 
+    (nmatch :v it "array type"  :exit (aget (nth index (aget indl "elements")) "value")
+            :v it "slice type"  :exit (aget (nth (+ offset index) (aget indl "array" "elements")) "value")
+            :v it "map type"    :exit (aget (aget indl "entries" index) "value")
+            :v it "string type" :exit (char (aget indl "value") index))
+)
+
+; Для lvalue всё вычисляется абсолютно так же
+(aclosure ac :attribute "opsem::lvalue" :type "indexable expr" :instance i :stage nil :do 
+    (update-push-aclosure ac :stage "eval index")
+    (clear-update-eval-aclosure ac :instance (aget i "indexable"))
+)
+(aclosure ac :attribute "opsem::lvalue" :type "index expr" :instance i :stage "eval index" 
+    :value indl :do 
+    (update-push-aclosure ac :stage "return value" :av "indexable" indl)
+    (clear-update-eval-aclosure ac :instance (aget i "index"))
+)
+; Строки являются неизменяемыми
+(aclosure ac :attribute "opsem::lvalue" :type "index expr" :instance i :stage "return value" 
+    :value index :ap ac "indexable" indl :ap indl "type" it :do 
+    (nmatch :v it "array type" :exit (nth index (aget indl "elements")) 
+            :v it "slice type" :exit (nth (+ offset index) (aget indl "array" "elements"))
+            :v it "map type"   :exit (aget indl "entries" index))
+)
+
+
+
 (aclosure ac "opsem" "slice expr" i :do ...)  ; TODO
 (aclosure ac "opsem" "slice" i :do ...)  ; TODO
 (aclosure ac "opsem::rvalue" "function call" i :do ...) ; TODO&
