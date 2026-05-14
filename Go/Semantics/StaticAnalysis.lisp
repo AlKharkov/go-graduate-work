@@ -246,3 +246,22 @@
 (aclosure ac :attribute "opsem" :type "signature" :instance i :stage "exit signature" :value r :do 
     (mo "signature" :av "parameters" (aget ac "parameters") :av "variadic parameter" (aget ac "variadic parameter") :av "result" r)
 )
+
+
+
+
+
+
+
+
+
+
+(aclosure ac :attribute "opsem::rvalue" :type "typed primitive" :instance i 
+    :stage "converting numbers to type" :ap i "value" raw :ap i "type" tp :do 
+    (match :v (is-instance tp "int type") T :ap tp "bit size" bs :p (mod raw (ash 1 bs))  ; если примитив - число
+    :do (mo "typed primitive" :av "type" tp :av "value" 
+            (nmatch :v (is-instance tp "unsigned int type") T :exit v  ; если беззнаковое
+                    :v (< v (ash 1 (1- bs))) T :exit v  ; если беззнаковое не выходило за границы знаковых
+                    :do (- v (ash 1 (1- bs)))))  ; иначе
+    :exit i)  ; если примитив не число
+)
