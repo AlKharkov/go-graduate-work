@@ -1,7 +1,7 @@
 #|
      Model of the Go language
 
-     Last edit: 14/05/2026
+     Last edit: 16/05/2026
 |#
 
 
@@ -365,17 +365,20 @@
      :at "statements" (listt "statement"))
 
 ;; for statement
-(typedef "for stmt" (uniont "for condition" "for range indexable" 
-                            "for range map" "for range channel"))
+(typedef "for stmt" (uniont "for condition" "for clause" "for range indexable" 
+                            "for range map" "for range channel" "for range int"))
 
-(mot "for condition"               ; while-like loop or traditional for loop
+(mot "for condition"               ; while-like loop
+     :at "condition" "expression" 
+     :at "body"      "block")
+
+(mot "for clause"                  ; traditional for loop
      :at "init"      "statement"   ; optional
      :at "condition" "expression" 
      :at "post"      "statement" 
      :at "body"      "block")
 
 (mot "for range indexable"
-     :at "init"      "statement"              ; optional
      :at "index"     "variable name"
      :at "value"     "variable name"          ; optional
      :at "operation" (enumt "assign" "decl")  ; = or :=
@@ -383,7 +386,6 @@
      :at "body"      "block")
 
 (mot "for range map"
-     :at "init"      "statement"              ; optional
      :at "key"       "variable name"
      :at "value"     "variable name"          ; optional
      :at "operation" (enumt "assign" "decl")
@@ -391,11 +393,16 @@
      :at "body"      "block")
 
 (mot "for range channel"
-     :at "init"      "statement"              ; optional
      :at "value"     "variable name"
      :at "operation" (enumt "assign" "decl") 
      :at "channel"   "expression" 
      :at "body"      "block")
+
+(mot "for range int"
+     :at "value" "variable name" 
+     :at "operation" (enumt "assign" "decl")
+     :at "max"   "expression"
+     :at "body"  "block")
 
 (mot "return stmt"   :at 1 (listt "expression"))
 (mot "break stmt"    :at 1 "label name")  ; optional label

@@ -265,3 +265,14 @@
                     :do (- v (ash 1 (1- bs)))))  ; иначе
     :exit i)  ; если примитив не число
 )
+
+
+
+
+
+
+; Копирует список ячеек, не заходит в глубину
+(defun copy-cells (lst)
+    (let ((r nil)) (dolist (c (reverse lst) r) 
+        (setq r (cons (mo "cell" :av "type" (aget c "type") :av "value" (aget c "value")) r))))
+)
