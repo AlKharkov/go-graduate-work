@@ -61,6 +61,8 @@
 
 
 ## To be soon
+1. typed primitive vs cell
+
 1. return, break, continue, goto, defer
 
 1. Доделать conversion
@@ -76,7 +78,7 @@
 1. Проверить отличия x++ и x += 1
 
 
-## Не понимаю, так что убираю
+## Пока не нужно
 ;;; External definitions
 (mot "translation unit" :at "declarations" (listt "external declaration"))
 (typedef "external declaration" (uniont "function literal" "declaration"))
