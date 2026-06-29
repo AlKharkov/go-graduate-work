@@ -154,7 +154,9 @@
 ;;; Literals
 ;;; ================================================
 
-(typedef "literal" (uniont "typed constant" "composite lit" "function lit" "method lit"))
+(typedef "literal" (uniont "untyped constant" "numeric lit" "composite lit" "function lit" "method lit"))
+
+(mot "numeric lit" :at "value" string)  ; translated to "untyped constant"
 
 (typedef "composite lit" (uniont "array lit" "slice lit" "struct lit" "map lit"))
 
@@ -274,7 +276,7 @@
 	
      ;; semantic attributes
      ; filled during static analysis
-	:at "label positions"  (cot :amap "label name" nat)        ; statements index for each label
+	:at "label positions"  (mot :amap "label name" nat)        ; statements index for each label
      :at "all variables"    (listt "variable name")             ; all variable names found in this block
      :at "decl variables"   (listt "variable name")             ; variable names that are declared in this block
      ; filled during runtime
@@ -334,7 +336,7 @@
 
 ;; if statement
 (mot "if stmt" 
-     :at "init"      "statement"  ; goes to the line before the if stmt
+     :at "init"      "statement"
      :at "condition" "expression" 
      :at "then"      "block" 
      :at "else"      (uniont "if stmt" "block"))

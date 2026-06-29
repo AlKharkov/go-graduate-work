@@ -1,7 +1,7 @@
 #|
 	Operational semantics for the Go language
 
-    Last edit: 17/05/2026
+    Last edit: 29/06/2026
 |#
 
 
@@ -510,7 +510,7 @@
         (dolist (p r) (aset a "variable cell" (aget p "name") (car cs)) (setf cs (cdr cs))))
     ; возвращаем старые значения для переменных замыкания функции
     (dolist (n (attributes cl)) (setf a "variable cell" n (car cs)) (setf cs (cdr cs)))
-    v  ; вернуть то, что получилось после выполнения тела функции
+    (car v)  ; вернуть то, что получилось после выполнения тела функции
 )
 
 ;; method call
@@ -794,14 +794,14 @@
         (item avs (reverse dv)) 
         (setf dv (cons (aget a "variable cell" item) dv))))
     (update-push-aclosure ac :stage "variable back")
-    (clear-update-eval-aclosure ac :stage "evaluating statement" :av "statements" sts)
+    (clear-update-eval-aclosure ac :stage "evaluating statement" :av "left" sts :av "statements" sts)
 )
 ; Вычисляет очередной оператор блока (очередную инструкцию блока).
 ; Для навигации, в том числе для меток, передает номер инструкции в блоке
 (aclosure ac :attribute "opsem" :type "block" :instance i :stage "evaluating statement" 
-    :ap ac "statements" sts :v (null sts) nil :do 
-    (update-push-aclosure ac :av "statements" (cdr sts))
-    (clear-update-eval-aclosure ac :instance (car sts) :av "block" i)
+    :ap ac "left" left :v (null left) nil :ap ac "statements" sts :do 
+    (update-push-aclosure ac :av "left" (cdr left) :av "statements" sts)
+    (clear-update-eval-aclosure ac :instance (car left) :av "block" i)
 )
 ; Восстанавливает старые ячейки памяти декларированным в блоке (важны только затенённые) переменным.
 (aclosure ac :attribute "opsem" :type "block" :instance i :stage "variable back" :do 
@@ -877,7 +877,8 @@
 
 ;; label
 (aclosure ac :attribute "opsem" :type "label" :instance i :do 
-    (clear-update-eval-aclosure ac :instance (aget i "statement") :av "block" (aget ac "block"))
+    (clear-update-eval-aclosure ac :instance (aget i "statement") 
+    :av "block" (aget ac "block") :av "label" (aget i "name"))
 )
 
 ;; empty statement
@@ -965,11 +966,11 @@
 
 ;; if statement
 (aclosure ac :attribute "opsem" :type "if stmt" :instance i :stage nil :do 
-    (update-push-aclosure ac :stage "apply" :av "block" (aget ac "block"))
+    (update-push-aclosure ac :stage "apply")
     (clear-update-eval-aclosure ac :instance (aget i "condition") :attribute "opsem::rvalue")
 )
-(aclosure ac :attribute "opsem" :type "if stmt" :instance i :stage "apply" :value c :ap ac "block" b :do 
-    (clear-update-eval-aclosure ac :instance (aget i (if c "then" "else")) :av "block" b)
+(aclosure ac :attribute "opsem" :type "if stmt" :instance i :stage "apply" :value c :do 
+    (clear-update-eval-aclosure ac :instance (aget i (if c "then" "else")))
 )
 
 ;;; switch statement
@@ -1030,50 +1031,49 @@
 
 ;; for condition
 ; Вычисляем условное выражение
-(aclosure ac :attribute "opsem" :type "for condition" :instance i :stage nil :ap ac "block" b :do 
-    (update-push-aclosure ac :stage "apply" :av "block" b)
-    (clear-update-eval-aclosure ac :instance (aget i "condition") :attribute "opsem::rvalue" :av "block" b)
+(aclosure ac :attribute "opsem" :type "for condition" :instance i :stage nil :do 
+    (update-push-aclosure ac :stage "apply")
+    (clear-update-eval-aclosure ac :instance (aget i "condition") :attribute "opsem::rvalue")
 )
 ; Если вычисленное значение правдиво, то выполняем тело и возвращаемся к предыдущему шагу
-(aclosure ac :attribute "opsem" :type "for condition" :instance i :stage "apply" 
-    :value v :v v T :av ac "block" b :do 
-    (update-push-aclosure ac :stage nil :av "block" b)
-    (clear-update-eval-aclosure ac :instance (aget i "body") :av "block" b)
+(aclosure ac :attribute "opsem" :type "for condition" :instance i :stage "apply" :value v :v v T :do 
+    (update-push-aclosure ac :stage nil)
+    (clear-update-eval-aclosure ac :instance (aget i "body"))
 )
 
 ;; for clause
 ; Вычисляем условное выражение
-(aclosure ac :attribute "opsem" :type "for clause" :instance i :stage nil :ap ac "block" b :do 
-    (update-push-aclosure ac :stage "apply" :av "block" b)
-    (clear-update-eval-aclosure ac :instance (aget i "condition") :attribute "opsem::rvalue" :av "block" b)
+(aclosure ac :attribute "opsem" :type "for clause" :instance i :stage nil :do 
+    (update-push-aclosure ac :stage "apply")
+    (clear-update-eval-aclosure ac :instance (aget i "condition") :attribute "opsem::rvalue")
 )
 ; Если оно правдиво, то выполняем тело
-(aclosure ac :attribute "opsem" :type "for clause" :instance i :stage "apply" 
-    :value v :v v T :ap ac "block" b :do 
-    (update-push-aclosure ac :stage "post" :av "block" b)
-    (clear-update-eval-aclosure ac :instance (aget i "body") :av "block" b)
+(aclosure ac :attribute "opsem" :type "for clause" :instance i :stage "apply" :value v :v v T :do 
+    (update-push-aclosure ac :stage "post")
+    (clear-update-eval-aclosure ac :instance (aget i "body"))
 )
 ; После вычисления тела, выполняем оператор шага post, и возвращаемся к вычислению условного выражения
-(aclosure ac :attribute "opsem" :type "for clause" :instance i :stage "post" :ap ac "block" b :do 
-    (update-push-aclosure ac :stage nil :av "block" b)
-    (clear-update-eval-aclosure ac :instance (aget i "post") :av "block" b)
+(aclosure ac :attribute "opsem" :type "for clause" :instance i :stage "post" :do 
+    (update-push-aclosure ac :stage nil)
+    (clear-update-eval-aclosure ac :instance (aget i "post"))
 )
 
-;; for range indexable
-(aclosure ac :attribute "opsem" :type "for range indexable" :instance i :stage nil :ap ac "block" b :do 
-    (update-push-aclosure ac :stage (otype (aget i "indexable" "type")) :av "block" b 
-                             :av "ind" ind)  ; array type | slice type | string type
-    (clear-update-eval-aclosure ac :instance (aget i "indexable") :attribute "opsem::rvalue" :av "block" b)
-)
 ; Эта функция копирует список ячеек, заменяя сами ячейки, но не меняя значения. Не идёт вглубь
 (defun copy-cells (lst) 
     (let ((r nil)) (dolist (c (reverse lst) r) 
         (setq r (cons (mo "cell" :av "type" (aget c "type") :av "value" (aget c "value")) r))))
 )
 
+;; for range indexable
+(aclosure ac :attribute "opsem" :type "for range indexable" :instance i :stage nil 
+    :ap i "indexable" ind :do 
+    ; Могут быть следующие стадии: array type, slice type, string type
+    (update-push-aclosure ac :stage (otype (aget ind "type")))
+    (clear-update-eval-aclosure ac :instance ind :attribute "opsem::rvalue")
+)
 ; Сведём случай среза к массиву
 (aclosure ac :attribute "opsem" :type "for range indexable" :instance i :stage "slice type" 
-    :ap ac "ind" sl :ap ac "block" b :ap sl "offset" ofst :ap sl "length" len :do 
+    :value sl :ap sl "offset" ofst :ap sl "length" len :do 
     ; Атрибуты, кроме среза, не меняются
     (clear-update-eval-aclosure ac :instance (mo "for range indexable" 
     :av "index" (aget i "index") 
@@ -1082,29 +1082,23 @@
     :av "indexable" (mo "array value" 
         :av "type" (co "array type" :av "len" len :ap "elem type" (aget sl "type" "elem type"))
         :av "elements" (copy-cells (subseq (aget sl (aseq "array" "elements")) ofst (+ ofst len))))
-    :av "body" (aget i "body"))
-    :av "block" b)
+    :av "body" (aget i "body")))
 )
 ; Сведём случай строки к массиву
 (aclosure ac :attribute "opsem" :type "for range indexable" :instance i :stage "string type" 
-    :ap ac "ind" pr :ap ac "block" b :ap pr "value" s :do 
+    :value pr :ap pr "value" s :do 
     (clear-update-eval-aclosure ac :instance (mo "for range indexable" 
     :av "index" (aget i "index") 
     :av "value" (aget i "value") 
     :av "operation" (aget i "operation") 
     :av "indexable" (mo "array value" 
-            :av "type" (co "array type" :av "len" (length s) 
-                :av "elem type" (co "unsigned int type" :av "bit size" 8)) 
-            :av "value" (map 'list #'char-code s)))
-    :av "block" b)
+        :av "type" (co "array type" :av "len" (length s) 
+            :av "elem type" (co "unsigned int type" :av "bit size" 8)) 
+        :av "value" (map 'list #'char-code s))))
 )
 ; Наконец, рассмотрим случай для массива
 (aclosure ac :attribute "opsem" :type "for range indexable" :instance i :stage "array type" 
-    :ap ac "ind" arr :ap i "index" ind :ap i "value" val :agent a :do 
-    ; Нужно будет вернуть прежние значения переменных "index" и "value"
-    (update-push-aclosure ac :stage "variable back" 
-        :av "index" (aget a "variable cell" ind) :av "value" (aget a "variable cell" val))
-    ; Переходим к итерациям цикла
+    :value arr :do 
     (clear-update-eval-aclosure ac :stage "evaluating" :av "now" 0 :av "left" (copy-cells (aget arr "value")))
 )
 ; Выполняет итерацию цикла: присваивает значения на текущем шаге, и запускает тело цикла
@@ -1115,12 +1109,6 @@
     (update-push-aclosure ac :av "now" (1+ k) :av "left" (cdr left))
     (clear-update-eval-aclosure ac :instance (aget i "body"))
 )
-; Возвращает прежние значения затененным переменным из условия цикла
-(aclosure ac :attribute "opsem" :type "for range indexable" :instance i :stage "variable back" 
-    :ap ac "index" ind :ap ac "value" val :agent a :do 
-    (aset a "variable cell" (aget i "index") ind)
-    (aset a "variable cell" (aget i "value") val)
-)
 
 ;; for range map
 ; Вычисляем выражение, которое должно в итоге дать карту
@@ -1130,10 +1118,7 @@
 )
 ; Сохраняем затеняемые значения переменных, переходим к итерациям цикла
 (aclosure ac :attribute "opsem" :type "for range map" :instance i :stage "map type" 
-    :value m :ap m "entry" mv :p (attributes mv) ks :p nil vs :agent a :ap a "variable cell" avc :do 
-    ; Сохраняем прежние значения переменных "key" и "value"
-    (update-push-aclosure ac :stage "variable back" 
-        :av "key" (aget avc (aget i "key")) :av "value" (aget avc (aget i "value")))
+    :value m :ap m "entry" mv :p (attributes mv) ks :p nil vs :do 
     (dolist (k (reverse ks)) (setq vs (cons (aget mv k) vs)))  ; cоздаем список значений
     ; Переходим к итерациям цикла
     (clear-update-eval-aclosure ac :stage "evaluating" :av "keys" ks :av "values" (copy-cells vs))
@@ -1146,12 +1131,6 @@
     (update-push-aclosure ac :av "keys" (cdr ks) :av "values" (cdr vs))
     (clear-update-eval-aclosure ac :instance (aget i "body"))
 )
-; Возвращает прежние значения затененным переменным из условия цикла
-(aclosure ac :attribute "opsem" :type "for range map" :instance i :stage "variable back" 
-    :ap ac "key" k :ap ac "value" v :agent a :do 
-    (aset a "variable cell" (aget i "key") k)
-    (aset a "variable cell" (aget i "value") v)
-)
 
 ;; for range int
 ; Вычисляет количество итераций
@@ -1161,9 +1140,7 @@
 )
 ; Сохраняет переменные, если нужно. Запускает итерации цикла
 (aclosure ac :attribute "opsem" :type "for range int" :instance i :stage "int type" 
-    :ap i "value" vn :value m :agent a :do 
-    (match :v (aget i "operation") "decl" :do  ; В этом случае нужно будет потом вернуть старые значения
-        (update-push-aclosure ac :stage "variable back" :av "value" (aget a "variable cell" vn)))
+    :value m :do 
     (clear-update-eval-aclosure ac :stage "evaluating" :av "max" m :av "now" 0)
 )
 ; Выполняет итерацию цикла: присваивает новое значение, запускает тело цикла
@@ -1172,4 +1149,80 @@
     (aset a "variable cell" (aget i "value") k)
     (update-push-aclosure ac :av "max" m :av "now" (1+ k))
     (clear-update-eval-aclosure ac :instance (aget i "body"))
+)
+
+
+;; return statement
+; Проверяет, есть ли возвращаемые значения, и вычисляет первое из них
+(aclosure ac :attribute "opsem" :type "return stmt" :instance i :stage nil 
+    :ap ac 1 left :do 
+    (update-push-aclosure ac :stage "exiting before function")
+    (match :v (null left) T :exit 
+        (update-push-aclosure ac :stage "evaluating" :av "left" (cdr left))
+        (clear-update-eval-aclosure ac :instance (car left) :attribute "opsem::rvalue"))
+)
+; Вычисляет очередное возвращаемое значение
+(aclosure ac :attribute "opsem" :type "return stmt" :instance i :stage "evaluating" 
+    :value v :ap ac "left" left :ap ac "done" d :do 
+    (match :v (null left) T :do (reverse d) 
+    :exit (update-push-aclosure ac :av "left" (cdr left) :av "done" (cons v d))
+          (clear-update-eval-aclosure ac :instance (car left) :attribute "opsem::rvalue"))
+)
+; Выходит из всех конструкций языка, пока не встретит функцию. Результат возвращает
+(aclosure ac :attribute "opsem" :type "return stmt" :instance i :stage "exiting before function" 
+    :value d :p (pop-aclosure ac) ac1 :p (aget ac1 "instance") i1 :do 
+    ; если встретили блок, то нужно вернуть значения всем затененнным переменным
+    (nmatch :v (is-instance i1 "block") T 
+    :exit (push-aclosure ac) (update-eval-aclosure ac1 :stage "variable back"))
+    ; если встретили функцию, то возвращаем значение
+    ; т.к. функция находилась на стадии вычисления тела функции
+    :v (is-instance i1 "function call") T 
+    :exit d (push-aclosure ac1)
+    ; иначе повторяем то же самое, но уже со следующим замыканием
+    :do d (eval-aclosure ac)
+)
+
+;; break statement
+(aclosure ac :attribute "opsem" :type "break stmt" :instance i :stage nil 
+    :ap i 1 ln :p (pop-aclosure ac) ac1 :ap ac1 "instance" i1 :ap ac1 "label" ln1 :do
+    ; если встречен блок, то возвращает значения всем затененным переменным
+    (nmatch :v (is-instance i1 "block") T 
+    :exit (push-aclosure ac) (update-eval-aclosure ac1 :stage "variable back")
+    ; если нашлась конструкция (for, switch, select), которую нужно завершить, то завершается обработка break
+    :v (and (is-instance i1 "for stmt") (or (not ln) (string= ln ln1))) :exit nil 
+    :v (and (is-instance i1 "switch stmt") (or (not ln) (string= ln ln1))) :exit nil 
+    ; иначе продолжается выход из конструкций языка по стеку
+    :do (eval-aclosure ac))
+)
+
+;; continue statement
+(aclosure ac :attribute "opsem" :type "continue stmt" :instance i :stage nil 
+    :ap i 1 ln :p (pop-aclosure ac) ac1 :ap ac1 "instance" i1 :ap ac1 "label" ln1 :do 
+    ; если встречен блок или цикл, то возвращает значения всем затененным переменным
+    (nmatch :v (is-instance i1 "block") T 
+    :exit (push-aclosure ac) (update-eval-aclosure ac1 :stage "variable back")
+    ; если нашлась конструкция, которую нужно перевести на следующий шаг, то завершается обработка continue
+    :v (and (is-instance i1 "for stmt") (or (not ln) (string= ln ln1))) :exit nil 
+    ; иначе продолжается выход из конструкций языка по стеку
+    :do (eval-aclosure ac))
+)
+
+;; goto statement
+(aclosure ac :attribute "opsem" :type "goto stmt" :instance i :stage nil 
+    :ap i 1 ln :p (pop-aclosure ac) ac1 :ap ac1 "instance" i1 :do 
+    ; если попалось помеченное нужной меткой выражение, то запускаем его с начала
+    (match :ap i1 "label" ln1 :v ln1 T :v (string= ln ln1) T 
+    :do (update-eval-aclosure ac1 :stage nil)
+    ; если попался блок, то проверяем список всех меток, находящихся в нем
+    :exit (match :v (is-instance i1 "block") T :ap i1 "label positions" lp :ap lp ln pos :do 
+    ; если нужная метка найдена, то будет искать в этой инструкции (м.б. это ещё один блок)
+    ; так же меняем исполнение инструкций этого блока на ту, в которой нашлась метка
+    (match :v pos T :ap ac1 "statements" sts :p (nthcdr pos sts) scdr :do 
+    (update-push-aclosure ac1 :av "left" (cdr scdr)) 
+    (update-push-aclosure ac1 :instance (car scdr)) 
+    (eval-aclosure ac)
+    ; если нужной метки в этом блоке не оказалось, то возвращаем прежние значения затененных переменных
+    :exit (push-aclosure ac) (update-push-aclosure ac1 :stage "variable back"))
+    ; если попался не блок, то пропускаем
+    :exit nil))
 )
