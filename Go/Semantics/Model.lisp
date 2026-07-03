@@ -1,7 +1,7 @@
 #|
      Model of the Go language
 
-     Last edit: 16/05/2026
+     Last edit: 03/07/2026
 |#
 
 
@@ -26,16 +26,16 @@
 
 (typedef "type" (uniont "primitive type" "composite type"))
 
-(typedef "primitive type" (uniont "bool type" "numeric type" "string type"))
+(typedef "primitive type" (uniont "bool type" "string type" "numeric type"))
 
 (cot "bool type")
+(cot "string type")
 (typedef "numeric type"  (uniont "int type" "float type" "complex type"))
 (typedef "int type"      (uniont "signed int type" "unsigned int type"))
 (cot "signed int type"   :at "bit size" (enumt 8 16 32 64))
 (cot "unsigned int type" :at "bit size" (enumt 8 16 32 64))
 (cot "float type"        :av "bit size" (enumt 32 64))
 (cot "complex type"      :av "bit size" (enumt 64 128))
-(cot "string type")
 
 ;; composite types
 (typedef "composite type" (uniont "array type" "slice type" "struct type" 
@@ -279,10 +279,7 @@
 	:at "label positions"  (mot :amap "label name" nat)        ; statements index for each label
      :at "all variables"    (listt "variable name")             ; all variable names found in this block
      :at "decl variables"   (listt "variable name")             ; variable names that are declared in this block
-     ; filled during runtime
-     :at "variable cells"   (mot :amap "variable name" "cell")  ; cells for all variables before declared in this block (nil if not allocated)
-)
-
+     :at "variable cells"   (mot :amap "variable name" "cell")) ; cells for each variable`s memory cell before entering the block
 
 ;;; ================================================
 ;;; Declarations

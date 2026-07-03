@@ -137,7 +137,7 @@
 \lstset{
     columns=fixed,
     keepspaces=true,
-    basewidth=0.5em,
+    basewidth=0.55em,
     breaklines=true,
     breakatwhitespace=true,
     breakautoindent=true,
@@ -249,30 +249,13 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 \section{Онтология фрагмента языка Go}
-Построение формальной модели семантики языка программирования требует предварительного 
-создания онтологии — системы понятий, описывающих синтаксические конструкции и 
-семантические сущности языка. В данном разделе на языке ABML вводятся типы объектов, 
-соответствующие элементам фрагмента языка Go.
+Построение формальной модели семантики языка программирования требует предварительного создания онтологии — системы понятий, описывающих синтаксические конструкции и семантические сущности языка. В данном разделе на языке ABML вводятся типы объектов, соответствующие элементам фрагмента языка Go.
 
-Классификация и порядок изложения опираются на официальную спецификацию языка Go. 
-Большинство наименований моделируемых объектов соответствуют их названиям в спецификации.
+Классификация и порядок изложения опираются на официальную спецификацию языка Go. Большинство наименований моделируемых объектов соответствуют их названиям в спецификации. Однако, часть конструкций языка или их составляющих не имеет уникальных наименований, или их названия связаны с синтаксисом, что не позволяет достаточно точно определять их смысл в различных контекстах.
 
 \subsection{Имена}
-Все имена в программе на Go моделируются как строки. Вводятся следующие типы имён:
+Все имена в программе на Go моделируются как строки. Вводятся следующие типы имен:
 
 \begin{ABMLCode}
 (typedef "identifier"     (uniont string))
@@ -294,12 +277,11 @@
 \end{ABMLCode}
 
 \subsubsection{Базовые типы}
-Базовые типы включают логический, числовые и строковый.
+Базовые типы включают логический, строковый и числовые.
 
 \begin{ABMLCode}
-(typedef "primitive type" (uniont "bool type" "numeric type" "string type"))
+(typedef "primitive type" (uniont "bool type" "string type" "numeric type"))
 (cot "bool type")
-(typedef "numeric type"  (uniont "int type" "float type" "complex type"))
 (cot "string type")
 \end{ABMLCode}
 
@@ -307,7 +289,8 @@
 с указанием разрядности. Вещественные и комплексные типы также имеют разрядность.
 
 \begin{ABMLCode}
-(typedef "int type" (uniont "signed int type" "unsigned int type"))
+(typedef "numeric type"  (uniont "int type" "float type" "complex type"))
+(typedef "int type"      (uniont "signed int type" "unsigned int type"))
 (cot "signed int type"   :at "bit size" (enumt 8 16 32 64))
 (cot "unsigned int type" :at "bit size" (enumt 8 16 32 64))
 (cot "float type"        :av "bit size" (enumt 32 64))
@@ -315,8 +298,7 @@
 \end{ABMLCode}
 
 \subsubsection{Составные типы}
-Составные типы включают массивы, срезы, структуры, указатели, функции, методы, 
-интерфейсы, карты и каналы.
+Тип составных объектов включает в себя типы массивов, срезов, структур, указателей, функций, методов, интерфейсов, карт и каналов.
 
 \begin{ABMLCode}
 (typedef "composite type" (uniont "array type" "slice type" "struct type" 
@@ -324,90 +306,108 @@
                                   "interface type" "map type" "channel type"))
 \end{ABMLCode}
 
-Массивы имеют фиксированную длину и тип элементов. Срезы — только тип элементов.
+Тип массивов содержит информацию о типе элементов и фиксированной длине. Срезы — только тип элементов, поскольку длина среза определяется динамически.
 
 \begin{ABMLCode}
-(cot "array type"   :at "elem type" "type" :at "len" nat)
-(cot "slice type"   :at "elem type" "type")
+(cot "array type" :at "elem type" "type" :at "len" nat)
+(cot "slice type" :at "elem type" "type")
 \end{ABMLCode}
 
 Структура определяется набором полей. Атрибут \ABMLString{ordered} используется 
-на этапе статического анализа для поддержки позиционной инициализации.
+на этапе статического анализа для поддержки декларации экземпляра структуры с позиционным заданием значений полей.
 
 \begin{ABMLCode}
-(cot "struct type"  :at "fields"  (cot :amap "field name" "type")
-                    :at "ordered" (listt "field name"))
+(cot "struct type" :at "fields"  (cot :amap "field name" "type")
+                   :at "ordered" (listt "field name"))
 \end{ABMLCode}
 
-Указатель хранит тип, на который он указывает.
+Тип указателей хранит информацию о типе, на который он указывает. 
 
 \begin{ABMLCode}
 (cot "pointer type" :at "type" "type")
 \end{ABMLCode}
 
-Функциональный тип описывает сигнатуру функции. Имена параметров опущены, так как 
-при проверке типов важны только сами типы. Вариативный параметр (многоточие) 
-моделируется отдельным атрибутом.
+Функциональный тип описывает сигнатуру функции. Имена параметров опущены, так как при проверке типов важны только соответствующие типы. Вариативный параметр, позволяющий функции принимать произвольной число аргументов (задается многоточием), моделируется отдельным атрибутом.
 
 \begin{ABMLCode}
 (cot "function type" 
-     :at "param types"   (listt "type") 
-     :at "variadic type" "type" 
-     :at "result types"  (listt "type"))
+	:at "param types"   (listt "type") 
+	:at "variadic type" "type" 
+	:at "result types"  (listt "type"))
 \end{ABMLCode}
 
-Тип метода включает получателя (receiver) и используется при определении интерфейсов.
+Тип методов содержит получателя (receiver) и используется, в том числе, при определении интерфейсов.
 
 \begin{ABMLCode}
 (cot "method type" 
-     :at "receiver type" "type" 
-     :at "param types"   (listt "type") 
-     :at "variadic type" "type" 
-     :at "result types"  (listt "type"))
+	:at "receiver type" "type" 
+	:at "param types"   (listt "type") 
+	:at "variadic type" "type" 
+	:at "result types"  (listt "type"))
 \end{ABMLCode}
 
-Интерфейс определяется как набор методов с их сигнатурами. Карта задаётся типом 
-ключа и типом значения. Канал имеет тип передаваемых элементов; направление не 
-моделируется, так как для корректных программ оно не влияет на семантику.
+Тип интерфейсов определяется как набор реализуемых методов с их сигнатурами. 
 
 \begin{ABMLCode}
 (cot "interface type" :at "methods" (cot :amap "method name" "method type"))
-(cot "map type"       :at "key type" "type" :at "elem type" "type")
-(cot "channel type"   :at "elem type" "type")
+\end{ABMLCode}
+
+Тип карт задается типами ключа и значения. 
+
+\begin{ABMLCode}
+(cot "map type" :at "key type" "type" :at "elem type" "type")
+\end{ABMLCode}
+
+Канал имеет тип передаваемых элементов. Направление не моделируется, так как для корректных программ оно не влияет на семантику.
+
+\begin{ABMLCode}
+(cot "channel type" :at "elem type" "type")
 \end{ABMLCode}
 
 \subsection{Ячейки памяти и значения}
-Моделирование памяти является основой операционной семантики. Ячейка представляет 
-собой изменяемый контейнер, хранящий значение. Переменные связываются с ячейками, 
-а не непосредственно со значениями. Тип ячейки указывает на тип хранимого значения.
+В данной работе модель памяти представлена типизированными значениями. То есть каждое значение имеет собственный тип, известный еще до этапа выполнения программы. 
+
+Ячейка представляет собой изменяемый контейнер, хранящий значение. Переменные связываются с ячейками, а не непосредственно со значениями. Тип ячейки указывает на тип хранимого значения.
 
 \begin{ABMLCode}
 (mot "cell" :at "value" "Go value" :at "type" "type")
 (typedef "Go value" (uniont "untyped constant" "typed primitive" "composite value"))
 \end{ABMLCode}
 
-Нетипизированные константы существуют только на этапе статического анализа; 
-в операционной семантике они преобразуются в типизированные значения.
+Нетипизированные константы существуют только на этапе статического анализа. До начала выполнения программы в операционной семантике они преобразуются в типизированные значения.
 
 \begin{ABMLCode}
 (typedef "untyped constant" (uniont bool int real string complex))
+\end{ABMLCode}
+
+Типизированные примитивы моделируют простейшие значения, то есть для хранения которых не используются ячейки памяти, с их статическими типами. Такими значениями являются строки и числа, в том числе вещественные и комплексные.
+
+\begin{ABMLCode}
 (mot "typed primitive" 
-     :at "type" "type"
-     :at "value" (uniont "nil" "untyped constant"))
+	:at "type" "type"
+	:at "value" (uniont "nil" "untyped constant"))
+\end{ABMLCode}
+
+Nil-значение, что встречается в предыдущей конструкции, является значением сложных типов при инициализации. Стоит заметить, что nil-ы разных типов различаются.
+
+\begin{ABMLCode}
 (cot "nil")
 \end{ABMLCode}
 
-Составные значения моделируют структуры данных языка Go. Массив хранит элементы 
-в виде списка ячеек, что обеспечивает возможность изменения элементов.
+Составные значения моделируют структуры данных языка Go.
 
 \begin{ABMLCode}
 (typedef "composite value" (uniont "array value" "slice value" "struct value" 
                                    "map value" "interface value" "method value"
                                    "function value" "cell" "channel value"))
+\end{ABMLCode}
 
+Массив хранит элементы в виде списка ячеек, что обеспечивает возможность изменения элементов. Однако, длина массива определяется собственным типом, и изменяться не может.
+
+\begin{ABMLCode}
 (mot "array value" 
-     :at "type"     "array type" 
-     :at "elements" (listt "cell"))
+	:at "type"     "array type" 
+	:at "elements" (listt "cell"))
 \end{ABMLCode}
 
 Срез является представлением фрагмента массива. Несколько срезов могут разделять 
@@ -415,50 +415,48 @@
 
 \begin{ABMLCode}
 (mot "slice value" 
-     :at "type"     "slice type" 
-     :at "array"    "array value" 
-     :at "offset"   nat 
-     :at "length"   nat 
-     :at "capacity" nat)
+	:at "type"     "slice type" 
+	:at "array"    "array value" 
+	:at "offset"   nat 
+	:at "length"   nat 
+	:at "capacity" nat)
 \end{ABMLCode}
 
-Структура хранит поля как отображение имён на ячейки.
+Структура хранит поля как отображение имен на ячейки.
 
 \begin{ABMLCode}
 (mot "struct value" 
-     :at "type"   "struct type" 
-     :at "fields" (mot :amap "field name" "cell"))
+	:at "type"   "struct type" 
+	:at "fields" (mot :amap "field name" "cell"))
 \end{ABMLCode}
 
 Карта хранит записи как отображение ключей на ячейки значений.
 
 \begin{ABMLCode}
 (mot "map value" 
-     :at "type"    "map type" 
-     :at "entries" (mot :amap "Go value" "cell"))
+	:at "type"    "map type" 
+	:at "entries" (mot :amap "Go value" "cell"))
 \end{ABMLCode}
 
-Канал представляет собой FIFO-очередь с буфером и очередями ожидающих горутин 
-(моделируемых ячейками).
+Канал представляет собой FIFO-очередь с буфером и очередями ожидающих горутин (моделируемых ячейками).
 
 \begin{ABMLCode}
 (mot "channel value" 
-     :at "type"          "channel type" 
-     :at "buffer"        (listt "Go value") 
-     :at "send queue"    (listt "cell") 
-     :at "receive queue" (listt "cell") 
-     :at "closed"        bool)
+	:at "type"          "channel type" 
+	:at "buffer"        (listt "Go value") 
+	:at "send queue"    (listt "cell") 
+	:at "receive queue" (listt "cell") 
+	:at "closed"        bool)
 \end{ABMLCode}
 
-Функция хранит тип, сигнатуру (с именами параметров), тело и замыкание — отображение 
-захваченных переменных на ячейки.
+Функция хранит тип, сигнатуру (с именами параметров), тело и замыкание — отображение захваченных переменных на ячейки.
 
 \begin{ABMLCode}
 (mot "function value" 
-     :at "type"      "function type" 
-     :at "signature" "function signature" 
-     :at "body"      "block" 
-     :at "closure"   (mot :amap "variable name" "cell"))
+	:at "type"      "function type" 
+	:at "signature" "function signature" 
+	:at "body"      "block" 
+	:at "closure"   (mot :amap "variable name" "cell"))
 \end{ABMLCode}
 
 Сигнатура функции содержит список деклараций параметров, вариативный параметр 
@@ -473,21 +471,20 @@
 (mot "param decl" :at "type" "type" :at "name" "parameter name")
 \end{ABMLCode}
 
-Метод аналогичен функции, но имеет отдельный получатель. Сигнатура метода включает 
-получатель как отдельную декларацию параметра.
+Метод аналогичен функции, но имеет отдельный получатель. Сигнатура метода включает получатель как отдельную декларацию параметра.
 
 \begin{ABMLCode}
 (mot "method value" 
-     :at "type"      "method type"
-     :at "signature" "method signature" 
-     :at "body"      "block" 
-     :at "closure"   (mot :amap "variable name" "cell"))
+	:at "type"      "method type"
+	:at "signature" "method signature" 
+	:at "body"      "block" 
+	:at "closure"   (mot :amap "variable name" "cell"))
 
 (mot "method signature" 
-     :at "receiver"       "param decl" 
-     :at "parameters"     (listt "param decl") 
-     :at "variadic param" "param decl" 
-     :at "results"        (listt "param decl"))
+	:at "receiver"       "param decl" 
+	:at "parameters"     (listt "param decl") 
+	:at "variadic param" "param decl" 
+	:at "results"        (listt "param decl"))
 \end{ABMLCode}
 
 Интерфейс хранит статический тип и значение. Динамический тип содержится внутри 
@@ -495,83 +492,87 @@
 
 \begin{ABMLCode}
 (mot "interface value" 
-     :at "type"  "interface type" 
-     :at "value" "typed value")
+	:at "type"  "interface type" 
+	:at "value" "typed value")
 \end{ABMLCode}
 
 \subsection{Литералы}
-Литералы представляют собой значения, которые могут быть непосредственно записаны 
-в исходном коде. Общий тип литерала объединяет типизированные константы и составные 
-литералы.
+Литералы представляют собой значения, которые могут быть непосредственно записаны в исходном коде. Общий тип литерала объединяет типизированные константы и составные литералы.
 
 \begin{ABMLCode}
-(typedef "literal" (uniont "typed constant" "composite lit" 
-                           "function lit" "method lit"))
-
-(typedef "composite lit" (uniont "array lit" "slice lit" 
-                                 "struct lit" "map lit"))
+(typedef "literal" (uniont "untyped constant" "numeric lit" 
+		"composite lit" "function lit" "method lit"))
 \end{ABMLCode}
 
-Литералы массивов и срезов могут содержать явное указание индексов. Каждый элемент 
-представлен парой \ABMLType{index \& elem}.
+Числовые литералы используются для задания чисел с помощью различных представлений.
+
+\begin{ABMLCode}
+(mot "numeric lit" :at "value" string)
+\end{ABMLCode}
+
+Литералы для составных значений: массив, срез, структура или карта.
+
+\begin{ABMLCode}
+(typedef "composite lit" (uniont "array lit" "slice lit" 
+                                  "struct lit" "map lit"))
+\end{ABMLCode}
+
+Литералы массивов и срезов могут задаваться с явным указанием индекса для каждого значения. Каждый такой элемент представлен парой \ABMLType{index \& elem}.
 
 \begin{ABMLCode}
 (mot "index & elem" :at "index" nat :at "value" "expression")
 
 (mot "array lit" 
-     :at "type"     "array type" 
-     :at "elements" (listt "index & elem"))
+	:at "type"     "array type" 
+	:at "elements" (listt "index & elem"))
 
 (mot "slice lit" 
-     :at "type"     "slice type" 
-     :at "elements" (listt "index & elem"))
+	:at "type"     "slice type" 
+	:at "elements" (listt "index & elem"))
 \end{ABMLCode}
 
-Литералы структур могут использовать явные имена полей.
+Литералы структур могут объявляться с явным указанием имени поля для каждого значения. Каждый такой элемент представлен парой \ABMLType{field \& value}.
 
 \begin{ABMLCode}
 (mot "field & value" :at "field" "field name" :at "value" "expression")
 
 (mot "struct lit" 
-     :at "type"   "struct type" 
-     :at "fields" (listt "field & value"))
+	:at "type"   "struct type" 
+	:at "fields" (listt "field & value"))
 \end{ABMLCode}
 
-Литералы карт задают пары ключ-значение.
+Литералы карт объявляются явным перечислением пар ключ-значение.
 
 \begin{ABMLCode}
 (mot "key & elem" :at "key" "expression" :at "value" "expression")
 
 (mot "map lit" 
-     :at "type"     "map type" 
-     :at "elements" (listt "key & elem"))
+	:at "type"     "map type" 
+	:at "elements" (listt "key & elem"))
 \end{ABMLCode}
 
 Функциональные литералы (анонимные функции) хранят тип, сигнатуру и тело.
 
 \begin{ABMLCode}
 (mot "function lit" 
-     :at "type"      "function type" 
-     :at "signature" "function signature" 
-     :at "body"      "block")
+	:at "type"      "function type" 
+	:at "signature" "function signature" 
+	:at "body"      "block")
 
 (mot "method lit" 
-     :at "type"      "method type" 
-     :at "signature" "method signature" 
-     :at "body"      "block")
+	:at "type"      "method type" 
+	:at "signature" "method signature" 
+	:at "body"      "block")
 \end{ABMLCode}
 
 \subsection{Выражения}
-Выражения в языке Go — это конструкции, которые после вычисления возвращают значение. 
-Все выражения содержат атрибут \ABMLString{type}, значение которого вычисляется на 
-этапе статического анализа.
+Выражения в языке Go — это конструкции, которые после вычисления возвращают значение. Все выражения содержат атрибут \ABMLString{type}, значение которого вычисляется на этапе статического анализа.
 
 \begin{ABMLCode}
-(typedef "expression" (uniont "literal" "variable ref" "(1)" "conversion" 
-                              "method expr" "selector expr" "index expr" 
-                              "slice expr" "type assertion" "<-1" 
-                              "function call" "unary expression" 
-                              "binary expression"))
+(typedef "expression" (uniont "literal" "variable ref" "(1)" 
+		"conversion" "method expr" "selector expr" "index expr" 
+		"slice expr" "type assertion" "<-1" "function call" 
+		"unary expression" "binary expression"))
 \end{ABMLCode}
 
 Ссылка на переменную представляет использование уже объявленной переменной.
@@ -595,35 +596,36 @@
 Метод-выражение возвращает функцию с получателем в качестве первого параметра.
 
 \begin{ABMLCode}
-(mot "method expr" :at "receiver type" "type" :at "name" "method name" 
+(mot "method expr" :at "receiver type" "type"
+		   :at "name" "method name"
                    :at "type" "type")
 \end{ABMLCode}
 
 Выбор поля или метода по экземпляру.
 
 \begin{ABMLCode}
-(mot "selector expr" :at "receiver" "expression" :at "name" "identifier" 
+(mot "selector expr" :at "receiver" "expression"
+		     :at "name" "identifier" 
                      :at "type" "type")
 \end{ABMLCode}
 
 Индексирование применимо к массивам, срезам, картам и строкам.
 
 \begin{ABMLCode}
-(mot "index expr" :at "indexable" "expression" :at "index" "expression" 
+(mot "index expr" :at "indexable" "expression"
+		  :at "index" "expression" 
                   :at "type" "type")
 \end{ABMLCode}
 
-Выражение среза создаёт новый срез из существующего массива, строки или среза. 
-Параметры \ABMLString{low}, \ABMLString{high} и \ABMLString{max} задают границы; 
-последний параметр может отсутствовать.
+Выражение среза создает новый срез из существующего массива, строки или среза. Параметры \ABMLString{low}, \ABMLString{high} и \ABMLString{max} задают границы. Последний из них может отсутствовать.
 
 \begin{ABMLCode}
 (mot "slice expr" 
-     :at "sequence" "expression"
-     :at "low"      "expression" 
-     :at "high"     "expression" 
-     :at "max"      "expression"
-     :at "type"     "slice type")
+	:at "sequence" "expression"
+	:at "low"      "expression" 
+	:at "high"     "expression" 
+	:at "max"      "expression"
+	:at "type"     "slice type")
 \end{ABMLCode}
 
 Проверка типа применяется к интерфейсным значениям.
@@ -642,10 +644,13 @@
 
 \begin{ABMLCode}
 (mot "function call" :at "function" "expression" 
-                     :at "arguments" (listt "expression") :at "type" "type")
+                     :at "arguments" (listt "expression")
+                     :at "type" "type")
 
-(mot "method call" :at "receiver" "expression" :at "method" "method name" 
-                   :at "arguments" (listt "expression") :at "type" "type")
+(mot "method call" :at "receiver" "expression" 
+		   :at "method" "method name" 
+                   :at "arguments" (listt "expression")
+                   :at "type" "type")
 \end{ABMLCode}
 
 Унарные выражения используют цифровую нотацию для обозначения операнда.
@@ -661,32 +666,32 @@
 (mot "&1" :at 1 "expression" :at "type" "type")
 \end{ABMLCode}
 
-Бинарные выражения также используют цифровую нотацию: \ABMLString{1} — левый операнд, 
-\ABMLString{2} — правый.
+Бинарные выражения также используют цифровую нотацию: \ABMLString{1} — левый операнд, \ABMLString{2} — правый.
 
 \begin{ABMLCode}
-(typedef "binary expression" (uniont "1||2" "1&&2" "1+2" "1-2"  "1*2" "1/2" "1%2"  
-                                     "1<<2" "1>>2" "1&2" "1&^2"  "1|2" "1^2" 
-                                     "1==2" "1!=2" "1<2" "1<=2" "1>2" "1>=2"))
+(typedef "binary expression" (uniont "1||2" "1&&2" "1+2" "1-2" "1*2" 
+				     "1/2" "1%2" "1<<2" "1>>2" "1&2" 
+				     "1&^2"  "1|2" "1^2" "1==2" "1!=2" 
+				     "1<2" "1<=2" "1>2" "1>=2"))
 \end{ABMLCode}
 
 \subsection{Блоки}
-Блоки определяют области видимости переменных и меток. В языке Go блок представляет 
-собой последовательность операторов, заключённую в фигурные скобки.
+Блоки определяют области видимости переменных и меток. В языке Go блок представляет собой последовательность операторов, заключенную в фигурные скобки.
 
 \begin{ABMLCode}
 (mot "block"
-     :at "statements"       (listt "statement")
-     :at "label positions"  (cot :amap "label name" nat)
-     :at "all variables"    (listt "variable name")
-     :at "decl variables"   (listt "variable name")
-     :at "variable cells"   (cot :amap "variable name" "cell"))
+	:at "statements" (listt "statement")
+	;; semantic attributes
+	:at "label positions"  (mot :amap "label name" nat)
+	:at "all variables"    (listt "variable name")
+	:at "decl variables"   (listt "variable name")
+	:at "variable cells"   (mot :amap "variable name" "cell"))
 \end{ABMLCode}
 
 Атрибут \ABMLString{statements} содержит список операторов блока. Атрибут 
 \ABMLString{label positions} сопоставляет меткам их позиции в блоке. Атрибут 
-\ABMLString{variable cells} сохраняет для каждой переменной её ячейку памяти до входа 
-в блок, что позволяет корректно обрабатывать затенение имён переменных.
+\ABMLString{variable cells} сохраняет для каждой переменной ее ячейку памяти до входа 
+в блок, что позволяет корректно обрабатывать затенение имен переменных.
 
 \subsection{Декларации}
 Декларации вводят новые объекты в программу.
@@ -702,19 +707,18 @@
 (mot "type decl" :at "name" "type name" :at "type" "type")
 \end{ABMLCode}
 
-Декларация констант и переменных может содержать явное указание типов (опционально) 
-и значения.
+Декларация констант и переменных может содержать явное указание типов (опционально) и значения.
 
 \begin{ABMLCode}
 (mot "const decl" 
-     :at "names"  (listt "constant name") 
-     :at "types"  (listt "type")
-     :at "values" (listt "expression"))
+	:at "names"  (listt "constant name") 
+	:at "types"  (listt "type")
+	:at "values" (listt "expression"))
 
 (mot "var decl" 
-     :at "names"  (listt "variable name") 
-     :at "types"  (listt "type")
-     :at "values" (listt "expression"))
+	:at "names"  (listt "variable name") 
+	:at "types"  (listt "type")
+	:at "values" (listt "expression"))
 \end{ABMLCode}
 
 Декларация функций и методов.
@@ -725,14 +729,15 @@
 \end{ABMLCode}
 
 \subsection{Операторы}
-Операторы в языке Go представляют собой конструкции, которые изменяют состояние 
-программы, но не возвращают значений.
+Операторы в языке Go представляют собой конструкции, которые изменяют состояние программы, но не возвращают значений.
 
 \begin{ABMLCode}
-(typedef "statement" (uniont "declaration" "label" "empty stmt" "1++" "1--" 
-                             "assignment stmt" "if stmt" "switch stmt" "for stmt" 
-                             "return stmt" "break stmt" "continue stmt" "goto stmt" 
-                             "defer stmt" "go stmt" "1<-2" "fallthrough" "select stmt"))
+(typedef "statement" (uniont "declaration" "label" "empty stmt" "1++" 
+			     "1--" "assignment stmt" "if stmt" 
+			     "switch stmt" "for stmt" "return stmt" 
+			     "break stmt" "continue stmt" 
+			     "goto stmt" "defer stmt" "go stmt" 
+			     "1<-2" "fallthrough" "select stmt"))
 \end{ABMLCode}
 
 Помеченный оператор позволяет присвоить метку любому оператору программы.
@@ -747,132 +752,178 @@
 (cot "empty stmt")
 \end{ABMLCode}
 
-Операторы инкремента и декремента являются операторами, а не выражениями, что отличает 
-Go от многих других языков.
+Операторы инкремента и декремента являются операторами, а не выражениями, что отличает Go от многих других языков.
 
 \begin{ABMLCode}
 (mot "1++ stmt" :at 1 "expression")
 (mot "1-- stmt" :at 1 "expression")
 \end{ABMLCode}
 
-Операторы присваивания включают простое присваивание и составные присваивания 
-с арифметическими и битовыми операциями.
+Операторы присваивания включают как простое присваивание, так и составные с арифметическими и битовыми операциями.
 
 \begin{ABMLCode}
-(typedef "assignment stmt" (uniont "1=2" "1+=2" "1-=2" "1*=2" "1/=2" "1%=2" 
-                                   "1<<=2" "1>>=2" "1^=2" "1|=2" "1&=2" "1&^=2"))
+(typedef "assignment stmt" (uniont "1=2" "1+=2" "1-=2" "1*=2" "1/=2" 
+				   "1%=2" "1<<=2" "1>>=2" "1^=2" 
+				   "1|=2" "1&=2" "1&^=2"))
+
+(mot "1=2"   :at 1 (listt "expression") :at 2 (listt "expression"))
+(mot "1+=2"  :at 1 (listt "expression") :at 2 (listt "expression"))
+(mot "1-=2"  :at 1 (listt "expression") :at 2 (listt "expression"))
+(mot "1*=2"  :at 1 (listt "expression") :at 2 (listt "expression"))
+(mot "1/=2"  :at 1 (listt "expression") :at 2 (listt "expression"))
+(mot "1%=2"  :at 1 (listt "expression") :at 2 (listt "expression"))
+(mot "1<<=2" :at 1 (listt "expression") :at 2 (listt "expression"))
+(mot "1>>=2" :at 1 (listt "expression") :at 2 (listt "expression"))
+(mot "1^=2"  :at 1 (listt "expression") :at 2 (listt "expression"))
+(mot "1|=2"  :at 1 (listt "expression") :at 2 (listt "expression"))
+(mot "1&=2"  :at 1 (listt "expression") :at 2 (listt "expression"))
+(mot "1&^=2" :at 1 (listt "expression") :at 2 (listt "expression"))
 \end{ABMLCode}
 
 Условный оператор может содержать необязательную инициализирующую часть.
 
 \begin{ABMLCode}
 (mot "if stmt" 
-     :at "init"      "statement"
-     :at "condition" "expression" 
-     :at "then"      "block" 
-     :at "else"      (uniont "if stmt" "block"))
+	:at "init"      "statement"
+	:at "condition" "expression" 
+	:at "then"      "block" 
+	:at "else"      (uniont "if stmt" "block"))
 \end{ABMLCode}
 
-Оператор выбора существует в двух формах: переключатель по выражению и переключатель 
-по типу.
+Оператор выбора существует в двух формах. 
 
 \begin{ABMLCode}
 (typedef "switch stmt" (uniont "expr switch stmt" "type switch stmt"))
 
 (cot "default")
 (cot "fallthrough")
-
-(mot "expr switch stmt" 
-     :at "init"       "statement" 
-     :at "controlled" "expression" 
-     :at "cases"      (listt "expr case clause"))
-
-(mot "expr case clause" 
-     :at "cases"      (uniont (listt "expression") "default") 
-     :at "statements" (listt "statement"))
-
-(mot "type switch stmt" 
-     :at "init"  "statement" 
-     :at "name"  "variable name"
-     :at "value" "expression" 
-     :at "cases" (listt "type case clause"))
-
-(mot "type case clause" 
-     :at "cases"      (uniont (listt "type") "default") 
-     :at "statements" (listt "statement"))
 \end{ABMLCode}
 
-Оператор цикла может быть представлен в нескольких формах: классический цикл 
-с условием, цикл с инициализацией и пост-действием, а также циклы \GoKeyword{range} 
-для массивов, срезов, строк, карт, каналов и целых чисел (начиная с Go 1.22).
+Первая, переключатель по выражению. 
+
+\begin{ABMLCode}
+(mot "expr switch stmt" 
+	:at "init"       "statement" 
+	:at "controlled" "expression" 
+	:at "cases"      (listt "expr case clause"))
+
+(mot "expr case clause" 
+	:at "cases"      (uniont (listt "expression") "default") 
+	:at "statements" (listt "statement"))
+\end{ABMLCode}
+
+Вторая, переключатель по типу. 
+
+\begin{ABMLCode}
+(mot "type switch stmt" 
+	:at "init"  "statement" 
+	:at "name"  "variable name"
+	:at "value" "expression" 
+	:at "cases" (listt "type case clause"))
+
+(mot "type case clause" 
+	:at "cases"      (uniont (listt "type") "default") 
+	:at "statements" (listt "statement"))
+\end{ABMLCode}
+
+Оператор цикла может быть представлен в нескольких формах.
 
 \begin{ABMLCode}
 (typedef "for stmt" (uniont "for condition" "for clause" 
                             "for range indexable" "for range map" 
                             "for range channel" "for range int"))
+\end{ABMLCode}
 
+Классический цикл с условием. В языке программирования C и ему подобных аналогичная конструкция обозначается ключевым словом \ABMLString{while}.
+
+\begin{ABMLCode}
 (mot "for condition"
      :at "condition" "expression" 
      :at "body"      "block")
-
-(mot "for clause"
-     :at "init"      "statement"
-     :at "condition" "expression" 
-     :at "post"      "statement" 
-     :at "body"      "block")
-
-(mot "for range indexable"
-     :at "index"     "variable name"
-     :at "value"     "variable name"
-     :at "operation" (enumt "assign" "decl")
-     :at "indexable" "expression"
-     :at "body"      "block")
-
-(mot "for range map"
-     :at "key"       "variable name"
-     :at "value"     "variable name"
-     :at "operation" (enumt "assign" "decl")
-     :at "map"       "expression"
-     :at "body"      "block")
-
-(mot "for range channel"
-     :at "value"     "variable name"
-     :at "operation" (enumt "assign" "decl")
-     :at "channel"   "expression" 
-     :at "body"      "block")
-
-(mot "for range int"
-     :at "value"     "variable name"
-     :at "operation" (enumt "assign" "decl")
-     :at "max"       "expression"
-     :at "body"      "block")
 \end{ABMLCode}
 
-Операторы передачи управления включают \GoKeyword{return}, \GoKeyword{break}, 
-\GoKeyword{continue} и \GoKeyword{goto}. Оператор \GoKeyword{defer} откладывает 
-выполнение функции до возврата из окружающей функции. Оператор \GoKeyword{go} 
-запускает функцию в отдельной горутине.
+Цикл с инициализацией, условием и пост-действием.
+
+\begin{ABMLCode}
+(mot "for clause"
+	:at "init"      "statement"
+	:at "condition" "expression" 
+	:at "post"      "statement" 
+	:at "body"      "block")
+\end{ABMLCode}
+
+Цикл \GoKeyword{range} для массивов, срезов или строк.
+
+\begin{ABMLCode}
+(mot "for range indexable"
+	:at "index"     "variable name"
+	:at "value"     "variable name"
+	:at "operation" (enumt "assign" "decl")
+	:at "indexable" "expression"
+	:at "body"      "block")
+\end{ABMLCode}
+
+Цикл \GoKeyword{range} для карт.
+
+\begin{ABMLCode}
+(mot "for range map"
+	:at "key"       "variable name"
+	:at "value"     "variable name"
+	:at "operation" (enumt "assign" "decl")
+	:at "map"       "expression"
+	:at "body"      "block")
+\end{ABMLCode}
+
+Цикл \GoKeyword{range} для каналов.
+
+\begin{ABMLCode}
+(mot "for range channel"
+	:at "value"     "variable name"
+	:at "operation" (enumt "assign" "decl")
+	:at "channel"   "expression" 
+	:at "body"      "block")
+\end{ABMLCode}
+
+Цикл \GoKeyword{range} для перечисления отрезка натурального ряда до заданного числа.
+
+\begin{ABMLCode}
+(mot "for range int"
+	:at "value"     "variable name"
+	:at "operation" (enumt "assign" "decl")
+	:at "max"       "expression"
+	:at "body"      "block")
+\end{ABMLCode}
+
+Операторы передачи управления включают \GoKeyword{return}, \GoKeyword{break}, \GoKeyword{continue} и \GoKeyword{goto}.
 
 \begin{ABMLCode}
 (mot "return stmt"   :at 1 (listt "expression"))
 (mot "break stmt"    :at 1 "label name")
 (mot "continue stmt" :at 1 "label name")
 (mot "goto stmt"     :at 1 "label name")
-(mot "defer stmt"    :at 1 "expression")
-(mot "go stmt"       :at 1 "expression")
 \end{ABMLCode}
 
-Оператор отправки в канал и оператор \GoKeyword{select} для работы с несколькими 
-каналами.
+Оператор \GoKeyword{defer} откладывает выполнение функции до возврата из окружающей функции. Оператор \GoKeyword{go} запускает функцию в отдельной горутине.
+
+\begin{ABMLCode}
+(mot "defer stmt" :at 1 "expression")
+(mot "go stmt"    :at 1 "expression")
+\end{ABMLCode}
+
+Оператор отправки данных в канал. 
 
 \begin{ABMLCode}
 (mot "1<-2" :at 1 "expression" :at 2 "expression")
+\end{ABMLCode}
 
+Оператор \GoKeyword{select} для работы с несколькими каналами.
+
+\begin{ABMLCode}
 (mot "select stmt" :at "cases" (listt "common clause"))
 
 (mot "common clause" 
-     :at "case"       (uniont "send stmt" "receive assign" "receive decl" "default") 
-     :at "statements" (listt "statement"))
+	:at "case"       (uniont "send stmt" "receive assign" "receive decl" "default") 
+	:at "statements" (listt "statement"))
 
 (mot "receive assign" :at 1 (listt "expression")    :at 2 "expression")
 (mot "receive decl"   :at 1 (listt "variable name") :at 2 "expression")
@@ -911,7 +962,7 @@ Go от многих других языков.
 
 Вычисление происходит в контексте окружения — агента, который хранит информацию 
 о переменных, константах, функциях и типах. Каждый шаг вычисления представлен 
-атрибутным замыканием (\ABMLKeyword{aclosure}), которое задаёт атрибут 
+атрибутным замыканием (\ABMLKeyword{aclosure}), которое задает атрибут 
 \ABMLString{opsem::rvalue} для выражений, возвращающих значения, 
 \ABMLString{opsem::lvalue} для получения ячеек памяти, и \ABMLString{opsem} 
 для операторов, не возвращающих значений.
@@ -951,7 +1002,7 @@ Go от многих других языков.
         :instance (aget i "type" "elem type")))
 \end{ABMLCode}
 
-Затем создаётся массив из ячеек памяти, заполненных значениями по умолчанию.
+Затем создается массив из ячеек памяти, заполненных значениями по умолчанию.
 
 \begin{ABMLCode}
 (aclosure ac :attribute "opsem::rvalue" :type "array lit" :instance i :stage "fill defaults" 
@@ -995,7 +1046,7 @@ Go от многих других языков.
         :instance (aget i "type" "elem type")))
 \end{ABMLCode}
 
-По максимальному индексу создаётся массив нужного размера.
+По максимальному индексу создается массив нужного размера.
 
 \begin{ABMLCode}
 (aclosure ac :attribute "opsem::rvalue" :type "slice lit" :instance i :stage "fill defaults" 
@@ -1026,7 +1077,7 @@ Go от многих других языков.
                   :instance (aget (car (cdr left)) "value"))))
 \end{ABMLCode}
 
-На последнем этапе создаётся значение среза, ссылающееся на созданный массив.
+На последнем этапе создается значение среза, ссылающееся на созданный массив.
 
 \begin{ABMLCode}
 (aclosure ac :attribute "opsem::rvalue" :type "slice lit" :instance i :stage "build value" 
@@ -1071,7 +1122,7 @@ Go от многих других языков.
                   :instance (aget (aget i "type" "fields") (car (cdr tns))))))
 \end{ABMLCode}
 
-Финальное значение структуры создаётся после обработки всех полей.
+Финальное значение структуры создается после обработки всех полей.
 
 \begin{ABMLCode}
 (aclosure ac :attribute "opsem::rvalue" :type "struct lit" :instance i :stage "build value" 
@@ -1079,7 +1130,7 @@ Go от многих других языков.
 \end{ABMLCode}
 
 \subsection{Литерал карты}
-Вычисление литерала карты происходит путём последовательного вычисления пар 
+Вычисление литерала карты происходит путем последовательного вычисления пар 
 ключ-значение.
 
 \begin{ABMLCode}
@@ -1107,7 +1158,7 @@ Go от многих других языков.
         :av "elem type" (aget i "type" "elem type")))
 \end{ABMLCode}
 
-После вычисления всех пар создаётся итоговая карта.
+После вычисления всех пар создается итоговая карта.
 
 \begin{ABMLCode}
 (aclosure ac :attribute "opsem::rvalue" :type "map lit" :instance i :stage "build value" 
@@ -1130,7 +1181,7 @@ Go от многих других языков.
 \end{ABMLCode}
 
 \subsection{Литерал метода}
-Аналогично создаётся значение метода.
+Аналогично создается значение метода.
 
 \begin{ABMLCode}
 (aclosure ac :attribute "opsem::rvalue" :type "method lit" :instance i 
@@ -1158,7 +1209,7 @@ Go от многих других языков.
 \end{ABMLCode}
 
 \subsubsection{Выражение в скобках}
-Выражение в скобках вычисляет своё содержимое.
+Выражение в скобках вычисляет свое содержимое.
 
 \begin{ABMLCode}
 (aclosure ac :attribute "opsem::rvalue" :type "(1)" :instance i :do 
@@ -1253,7 +1304,7 @@ Go от многих других языков.
 \end{ABMLCode}
 
 \subsubsection{Выражение среза}
-Выражение среза создаёт новый срез из существующего массива, среза или строки.
+Выражение среза создает новый срез из существующего массива, среза или строки.
 
 \begin{ABMLCode}
 (aclosure ac :attribute "opsem::rvalue" :type "slice expr" 
@@ -1315,7 +1366,7 @@ Go от многих других языков.
     (clear-update-eval-aclosure ac :instance (aget i 1)))
 \end{ABMLCode}
 
-Вспомогательная функция для приведения целых чисел к нужному типу с учётом 
+Вспомогательная функция для приведения целых чисел к нужному типу с учетом 
 переполнения (wrap-around для беззнаковых, знаковое представление для знаковых).
 
 \begin{ABMLCode}

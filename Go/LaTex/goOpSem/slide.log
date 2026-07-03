@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.17)  18 MAY 2026 08:50
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.17)  3 JUL 2026 23:35
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -980,36 +980,37 @@ LaTeX Font Info:    Trying to load font information for U+lasy on input line 24
 File: ulasy.fd 1998/08/17 v2.2e LaTeX symbol font definitions
 )
 Package babel Info: 'russian' activates 'russian' shorthands.
-(babel)             Reported on input line 265.
+(babel)             Reported on input line 252.
  [1{d:/Programs/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{d:/P
 rograms/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t2a.enc}
 
-] [2] [3] [4]
+] [2] [3]
 Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [4]
+Underfull \vbox (badness 1509) has occurred while \output is active []
 
  [5]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [6]
-[7]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [8]
-Underfull \vbox (badness 3872) has occurred while \output is active []
+ [7]
+[8]
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [9{d:/Programs/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.e
+ [9]
+[10{d:/Programs/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.e
 nc}]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [10]
-Underfull \vbox (badness 5578) has occurred while \output is active []
-
  [11]
-Underfull \vbox (badness 1902) has occurred while \output is active []
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [12]
 [13]
-Underfull \vbox (badness 10000) has occurred while \output is active []
+Underfull \vbox (badness 1701) has occurred while \output is active []
 
  [14]
 Underfull \vbox (badness 10000) has occurred while \output is active []
@@ -1018,47 +1019,61 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [16]
-[17] [18]
-Underfull \vbox (badness 8000) has occurred while \output is active []
-
- [19]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [20]
-[21]
-Underfull \vbox (badness 8000) has occurred while \output is active []
+ [17]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [18]
+[19] [20]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [21]
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [22]
-[23] [24] [25] [26] [27]
-Underfull \vbox (badness 8000) has occurred while \output is active []
+[23]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [24]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [25]
+[26] [27]
+Underfull \vbox (badness 1331) has occurred while \output is active []
 
  [28]
+[29]
 Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [29]
-Underfull \vbox (badness 1248) has occurred while \output is active []
 
  [30]
-Underfull \vbox (badness 10000) has occurred while \output is active []
+Underfull \vbox (badness 8000) has occurred while \output is active []
 
  [31]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [32]
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [33]
+[33]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [34]
-[35]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [35]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [36]
-Underfull \vbox (badness 5578) has occurred while \output is active []
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [37]
-[38] [39] [40] (./slide.aux)
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [38]
+[39] [40]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [41]
+[42] [43] [44] (./slide.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-03-20>
@@ -1067,13 +1082,13 @@ Package rerunfilecheck Info: File `slide.out' has not changed.
 (rerunfilecheck)             Checksum: AA6696A68FAE76B63991C3C67A6452A8;7597.
  ) 
 Here is how much of TeX's memory you used:
- 28138 strings out of 467349
- 544966 string characters out of 5415119
- 1243354 words of memory out of 5000000
- 55880 multiletter control sequences out of 15000+600000
+ 28177 strings out of 467349
+ 545703 string characters out of 5415119
+ 1209254 words of memory out of 5000000
+ 55885 multiletter control sequences out of 15000+600000
  642328 words of font info for 69 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 98i,7n,108p,1035b,2024s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 98i,7n,108p,1035b,2016s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <d:/Programs/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1095.pfb
 ><d:/Programs/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb>
 <d:/Programs/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1440.pfb><
@@ -1085,10 +1100,10 @@ rograms/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm1440.pfb><d:/Pr
 ograms/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfsl0900.pfb><d:/Pro
 grams/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfti1440.pfb><d:/Prog
 rams/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sftt1200.pfb>
-Output written on slide.pdf (40 pages, 386012 bytes).
+Output written on slide.pdf (44 pages, 397973 bytes).
 PDF statistics:
- 1467 PDF objects out of 1728 (max. 8388607)
- 1387 compressed objects within 14 object streams
- 938 named destinations out of 1000 (max. 500000)
+ 1520 PDF objects out of 1728 (max. 8388607)
+ 1435 compressed objects within 15 object streams
+ 972 named destinations out of 1000 (max. 500000)
  341 words of extra memory for PDF output out of 10000 (max. 10000000)
 
