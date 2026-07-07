@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.17)  3 JUL 2026 23:35
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.17)  7 JUL 2026 19:43
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -909,27 +909,27 @@ Package babel Info: 'russian' activates 'russian' shorthands.
 )
 \openout1 = `slide.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 227.
-LaTeX Font Info:    ... okay on input line 227.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 227.
-LaTeX Font Info:    ... okay on input line 227.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 227.
-LaTeX Font Info:    ... okay on input line 227.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 227.
-LaTeX Font Info:    ... okay on input line 227.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 227.
-LaTeX Font Info:    ... okay on input line 227.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 227.
-LaTeX Font Info:    ... okay on input line 227.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 227.
-LaTeX Font Info:    ... okay on input line 227.
-LaTeX Font Info:    Checking defaults for T2A/cmr/m/n on input line 227.
-LaTeX Font Info:    ... okay on input line 227.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 227.
-LaTeX Font Info:    ... okay on input line 227.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 227.
-LaTeX Font Info:    ... okay on input line 227.
-LaTeX Info: Redefining \th on input line 227.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 228.
+LaTeX Font Info:    ... okay on input line 228.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 228.
+LaTeX Font Info:    ... okay on input line 228.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 228.
+LaTeX Font Info:    ... okay on input line 228.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 228.
+LaTeX Font Info:    ... okay on input line 228.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 228.
+LaTeX Font Info:    ... okay on input line 228.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 228.
+LaTeX Font Info:    ... okay on input line 228.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 228.
+LaTeX Font Info:    ... okay on input line 228.
+LaTeX Font Info:    Checking defaults for T2A/cmr/m/n on input line 228.
+LaTeX Font Info:    ... okay on input line 228.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 228.
+LaTeX Font Info:    ... okay on input line 228.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 228.
+LaTeX Font Info:    ... okay on input line 228.
+LaTeX Info: Redefining \th on input line 228.
 
 (d:/Programs/texlive/2026/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
@@ -952,7 +952,7 @@ Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
-Package hyperref Info: Link coloring OFF on input line 227.
+Package hyperref Info: Link coloring OFF on input line 228.
 
 (./slide.out) (./slide.out)
 \@outlinefile=\write4
@@ -960,27 +960,27 @@ Package hyperref Info: Link coloring OFF on input line 227.
 
 \c@lstlisting=\count372
 LaTeX Font Info:    Trying to load font information for T2A+cmtt on input line 
-239.
+240.
 
 (d:/Programs/texlive/2026/texmf-dist/tex/latex/cyrillic/t2acmtt.fd
 File: t2acmtt.fd 2001/08/11 v1.0a Computer Modern Cyrillic font definitions
 )
 LaTeX Font Info:    Font shape `T2A/cmtt/bx/n' in size <12> not available
-(Font)              Font shape `T2A/cmtt/m/n' tried instead on input line 239.
+(Font)              Font shape `T2A/cmtt/m/n' tried instead on input line 240.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <12> on input line 242.
+(Font)              <12> on input line 243.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <8> on input line 242.
+(Font)              <8> on input line 243.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <6> on input line 242.
+(Font)              <6> on input line 243.
 LaTeX Font Info:    Trying to load font information for U+lasy on input line 24
-2.
+3.
 
 (d:/Programs/texlive/2026/texmf-dist/tex/latex/base/ulasy.fd
 File: ulasy.fd 1998/08/17 v2.2e LaTeX symbol font definitions
 )
 Package babel Info: 'russian' activates 'russian' shorthands.
-(babel)             Reported on input line 252.
+(babel)             Reported on input line 255.
  [1{d:/Programs/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{d:/P
 rograms/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t2a.enc}
 
@@ -1029,63 +1029,81 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [21]
-Underfull \vbox (badness 10000) has occurred while \output is active []
+Underfull \vbox (badness 1331) has occurred while \output is active []
 
  [22]
-[23]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [23]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [24]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [25]
-[26] [27]
+Overfull \hbox (15.39116pt too wide) in paragraph at lines 1164--1166
+[]\T2A/cmr/m/n/12 ¬ычисление ли-те-ра-ла кар-ты на-чи-на-ет-с€ с по-сле-до-ва-т
+ель-но-го вы-чис-ле-ни€ пар ключ-значение. 
+ []
+
+
 Underfull \vbox (badness 1331) has occurred while \output is active []
 
- [28]
-[29]
-Underfull \vbox (badness 10000) has occurred while \output is active []
+ [26]
+Underfull \vbox (badness 4048) has occurred while \output is active []
 
- [30]
-Underfull \vbox (badness 8000) has occurred while \output is active []
+ [27]
+[28] [29] [30]
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [31]
-Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [32]
-[33]
-Underfull \vbox (badness 10000) has occurred while \output is active []
+Package hyperref Warning: Difference (2) between bookmark levels is greater 
+(hyperref)                than one, level fixed on input line 1408.
 
- [34]
+[32] [33] [34]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [35]
-Underfull \vbox (badness 10000) has occurred while \output is active []
+Underfull \vbox (badness 8000) has occurred while \output is active []
 
  [36]
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [37]
+[37]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [38]
-[39] [40]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [39]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [40]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [41]
-[42] [43] [44] (./slide.aux)
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [42]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [43]
+[44]
+Underfull \vbox (badness 8000) has occurred while \output is active []
+
+ [45]
+[46] [47] [48] (./slide.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-03-20>
  ***********
 Package rerunfilecheck Info: File `slide.out' has not changed.
-(rerunfilecheck)             Checksum: AA6696A68FAE76B63991C3C67A6452A8;7597.
+(rerunfilecheck)             Checksum: 09711507419836796EF501E67B13BD0F;8098.
  ) 
 Here is how much of TeX's memory you used:
- 28177 strings out of 467349
- 545703 string characters out of 5415119
- 1209254 words of memory out of 5000000
- 55885 multiletter control sequences out of 15000+600000
+ 28356 strings out of 467349
+ 548427 string characters out of 5415119
+ 1257128 words of memory out of 5000000
+ 55924 multiletter control sequences out of 15000+600000
  642328 words of font info for 69 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  98i,7n,108p,1035b,2016s stack positions out of 10000i,1000n,20000p,200000b,200000s
@@ -1100,10 +1118,10 @@ rograms/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm1440.pfb><d:/Pr
 ograms/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfsl0900.pfb><d:/Pro
 grams/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfti1440.pfb><d:/Prog
 rams/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sftt1200.pfb>
-Output written on slide.pdf (44 pages, 397973 bytes).
+Output written on slide.pdf (48 pages, 419240 bytes).
 PDF statistics:
- 1520 PDF objects out of 1728 (max. 8388607)
- 1435 compressed objects within 15 object streams
- 972 named destinations out of 1000 (max. 500000)
- 341 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 1709 PDF objects out of 1728 (max. 8388607)
+ 1618 compressed objects within 17 object streams
+ 1112 named destinations out of 1200 (max. 500000)
+ 357 words of extra memory for PDF output out of 10000 (max. 10000000)
 

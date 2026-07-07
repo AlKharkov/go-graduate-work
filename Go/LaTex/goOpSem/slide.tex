@@ -51,17 +51,18 @@
     classoffset=0,
     morekeywords={
         mot, cot, typedef, mo, co, uid, imax, otype, is-instance, 
-        attributes, att, aget, aset, aseq, aseql, acall, match, 
-        nmatch, aclosure, eval-aclosure, clear-aclosure, 
-        update-push-aclosure, clear-update-eval-aclosure,
-        push-aclosure, pop-aclosure, peek-aclosure
+        aspect, att, aget, aset, aseq, aseql, acall, match, 
+        nmatch, acontext, eval-acontext, clear-acontext, 
+        update-push-acontext, clear-update-eval-acontext,
+        push-acontext, pop-acontext, peek-acontext,
+        attributes
     },
     keywordstyle=\color{abmlKeyword}\bfseries,
     classoffset=1,
     morekeywords={
-        :av, :apath, :do, :at, :atv, :b, :this, :ap, :p, :atp, :attributes, 
+        :av, :apath, :do, :at, :atv, :b, :this, :ap, :p, :atp, 
         :tags, :opt, :flatten, :case, :agent, :context, :union, :enum, :v, :t, 
-        :p, :exit, :amap, :value, :nmatch, :attribute, :type, :stage, :instance, 
+        :p, :exit, :amap, :value, :nmatch, :aspect, :type, :stage, :instance, 
         :match, :ap, :av, :at, :atv, :amar
     },
     keywordstyle=\color{abmlAttribute}\bfseries,
@@ -75,7 +76,7 @@
     morekeywords={
         let, car, cdr, dotimes, setf, cons, reverse, length, list, dolist, 
         and, or, not, null, ash, nil, subseq, mod, rem, logand, logior,
-        logxor, lognot, logeqv, logorc, coerce
+        logxor, lognot, logeqv, logorc, coerce, T
     },
     keywordstyle=\color{abmlLisp}\bfseries,
     classoffset=0,
@@ -247,7 +248,9 @@
 В данной работе рассматривается фрагмент языка программирования Go и его операционная семантика, формализованная с помощью языка спецификаций ABML (Attribute-Based Modeling Language), который является лексическим расширением диалекта Common Lisp — SBCL. Выбор языка Go обусловлен его возрастающей популярностью в промышленной разработке, особенно в области системного программирования. Язык ABML, в свою очередь, предоставляет средства для описания онтологий предметных областей и формализации правил перехода между состояниями.
 
 
-
+% ================================================================================
+% Модель языка Go
+% ================================================================================
 
 \section{Онтология фрагмента языка Go}
 Построение формальной модели семантики языка программирования требует предварительного создания онтологии — системы понятий, описывающих синтаксические конструкции и семантические сущности языка. В данном разделе на языке ABML вводятся типы объектов, соответствующие элементам фрагмента языка Go.
@@ -932,299 +935,475 @@ Nil-значение, что встречается в предыдущей ко
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+% ================================================================================
+%
+% Операционная семантика
+%
+% ================================================================================
 
 \section{Операционная семантика выражений}
-Операционная семантика определяет, как вычисляются выражения языка Go в процессе 
-выполнения программы. В данном разделе на языке ABML формализуются правила 
-вычисления для всех конструкций языка: литералов, выражений, деклараций, операторов.
+Операционная семантика определяет, как вычисляются выражения языка Go в процессе выполнения программы. В данном разделе на языке ABML формализуются правила вычисления для всех конструкций языка Go.
 
-Вычисление происходит в контексте окружения — агента, который хранит информацию 
-о переменных, константах, функциях и типах. Каждый шаг вычисления представлен 
-атрибутным замыканием (\ABMLKeyword{aclosure}), которое задает атрибут 
-\ABMLString{opsem::rvalue} для выражений, возвращающих значения, 
-\ABMLString{opsem::lvalue} для получения ячеек памяти, и \ABMLString{opsem} 
-для операторов, не возвращающих значений.
+Вычисление происходит в контексте окружения — агента, который хранит информацию о переменных, константах, функциях и типах. Каждый шаг вычисления представлен декларацией аспекта (\ABMLKeyword{aspect}), которая задает атрибут \ABMLString{opsem::rvalue} для выражений, возвращающих значения, \ABMLString{opsem::lvalue} для получения ячеек памяти, и \ABMLString{opsem}  для конструкций языка, не возвращающих значений.
 
 \subsection{Окружение и агенты}
 Окружение представляет собой совокупность агентов, каждый из которых моделирует 
-состояние выполнения программы.
+состояние выполнения программы. Атрибут \ABMLString{value} автоматически заполняется последним вычисленным этим агентом значением. Остальные 5 атрибутов хранят отношения декларируемых в программе имен к значениям констант, переменных, функций, методов и пользовательских типов соответственно.
 
 \begin{ABMLCode}
 (mot "env"  :at "agents" (listt "agent"))
 
 (mot "agent"
-    :at "constant value" (mot :amap "constant name" "Go value")
-    :at "variable cell"  (mot :amap "variable name" "cell")
-    :at "function value" (mot :amap "function name" "function value")
-    :at "method value"   (mot :amap "type name" 
-                              (mot :amap "method name" "method value"))
-    :at "type"           (mot :amap "type name" "type")
-    :at "value"          "Go value")
+  :at "constant value" (mot :amap "constant name" "Go value") 
+  :at "variable cell"  (mot :amap "variable name" "cell") 
+  :at "function value" (mot :amap "function name" "function value") 
+  :at "method value"   (mot :amap "type name" 
+    			   (mot :amap "method name" "method value")) 
+  :at "type"           (mot :amap "type name" "type") 
+  :at "value"          "Go value")
 \end{ABMLCode}
 
 \subsection{Базовое правило для значений}
 Если выражение уже является значением, оно возвращается без изменений.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "Go value" :instance i :do i)
+(aspect "opsem::rvalue" :context ac :type "Go value" :instance i :do i)
 \end{ABMLCode}
 
-\subsection{Литерал массива}
-Вычисление литерала массива происходит в несколько этапов. Сначала вычисляется 
-значение по умолчанию для элементов массива на основе типа элементов.
+\subsection{Литералы}
+Здесь и далее будет описываться вычисление соответствующих конструкций онтологической модели. Повторно приводиться их описание не будет.
+
+\subsubsection{Литерал массива}
+Вычисление литерала массива происходит в несколько этапов. Сначала вычисляется значение по умолчанию для элементов массива. Соответствующая информация получается из типа литерала.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "array lit" :instance i :stage nil :do 
-    (update-push-aclosure ac :stage "fill defaults")
-    (clear-update-eval-aclosure ac :attribute "default value by type" 
-        :instance (aget i "type" "elem type")))
+(aspect "opsem::rvalue" :context ac :type "array lit" :instance i 
+  :stage nil :do 
+    
+  (update-push-acontext ac :stage "fill defaults")
+  (clear-update-eval-acontext ac :aspect "default value by type" 
+    :instance (aget i "type" "elem type"))
 \end{ABMLCode}
 
-Затем создается массив из ячеек памяти, заполненных значениями по умолчанию.
+Затем, на стадии \ABMLString{fill defaults} создается массив из ячеек памяти, содержащих значения по умолчанию.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "array lit" :instance i :stage "fill defaults" 
-    :ap i "elements" es :ap i "type" at :ap at "elem type" et 
-    :ap (mo "pointer type" :av "type" et) ct :value v :do 
-    (match :v (null es) T 
-        :do (mo "array value" :av "type" at :av "elements" nil) 
-        :exit (update-push-aclosure ac :stage "evaluating" :av "left" es 
-                  :av "array" (let ((c nil)) 
-                      (dotimes (k (aget at "len") c) 
-                          (setf c (cons (mo "cell" :av "value" v :av "type" ct) 
-                                        c))))))
-    (clear-update-eval-aclosure ac :instance (aget (car es) "value")))
+(aspect "opsem::rvalue" :context ac :type "array lit" :instance i 
+  :stage "fill defaults" :ap i "elements" es :ap i "type" at 
+  :ap at "elem type" et :p (mo "pointer type" :av "type" et) ct 
+  :value v :do 
+	
+  (match :v (null es) T 
+  :do   (mo "array value" :av "type" at :av "elements" nil) 
+  :exit (update-push-acontext ac :stage "evaluating" :av "left" es 
+          :av "array" (let ((c nil)) 
+          (dotimes (k (aget at "len") c) (setf c 
+          (cons (mo "cell" :av "value" v :av "type" ct) c)))))
+        (clear-update-eval-acontext ac 
+          :instance (aget (car es) "value"))))
 \end{ABMLCode}
 
-На этапе вычисления явных элементов происходит замена значений 
-в соответствующих ячейках.
+На стадии \ABMLString{evaluating} происходит замена значений в соответствующих ячейках массива. Сначала изменяет k-й элемент массива. Затем, если вычислять нечего, то создает и возвращает значение массива. Иначе рекурсивно вызывается этот же шаг для необработанных элементов.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "array lit" :instance i :stage "evaluating" 
-    :ap ac "left" left :ap ac "array" arr :value v :ap (car left) "index" k :do 
-    (let ((c arr)) 
-        (dotimes (j k (setf (car c) "value" v)) 
-            (setf c (cdr c))))
-    (match :v (null (cdr left)) T 
-        :do (mo "array value" :av "type" (aget i "type") :av "elements" arr)
-        :exit (update-push-aclosure ac :av "left" (cdr left) :av "array" arr)
-              (clear-update-eval-aclosure ac 
-                  :instance (aget (car (cdr left)) "value"))))
+(aspect "opsem::rvalue" :context ac :type "array lit" :instance i 
+  :stage "evaluating" :ap ac "left" left :ap ac "array" arr 
+  :value v :ap (car left) "index" k :do 
+
+  (let ((c arr)) (dotimes (j k (setf (car c) "value" v)) 
+    (setf c (cdr c))))
+  (match :v (null (cdr left)) T 
+  :do (mo "array value" :av "type" (aget i "type") :av "elements" arr)
+  :exit (update-push-acontext ac :av "left" (cdr left) 
+          :av "array" arr)
+        (clear-update-eval-acontext ac 
+          :instance (aget (car (cdr left)) "value"))))
 \end{ABMLCode}
 
-\subsection{Литерал среза}
-Вычисление литерала среза аналогично вычислению массива. Сначала вычисляется 
-значение по умолчанию.
+\subsubsection{Литерал среза}
+Вычисление литерала среза происходит аналогично вычислению массива. Сначала вычисляется значение по умолчанию.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "slice lit" :instance i :stage nil :do 
-    (update-push-aclosure ac :stage "build value")
-    (update-push-aclosure ac :stage "fill defaults")
-    (clear-update-eval-aclosure ac :attribute "default value by type" 
-        :instance (aget i "type" "elem type")))
+(aspect "opsem::rvalue" :context ac :type "slice lit" :instance i 
+  :stage nil :do 
+
+  (update-push-acontext ac :stage "build value")
+  (update-push-acontext ac :stage "fill defaults")
+  (clear-update-eval-acontext ac :aspect "default value by type" 
+    :instance (aget i "type" "elem type")))
 \end{ABMLCode}
 
-По максимальному индексу создается массив нужного размера.
+На стадии \ABMLString{fill defaults} по максимальному индексу m создается нужного размера массив, заполненный ячейками со значениями по умолчанию.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "slice lit" :instance i :stage "fill defaults" 
-    :value v :ap i "elements" es :p -1 m 
-    :ap (mo "pointer type" :av "type" (mo "pointer type" 
-            :av "type" (aget i "type" "elem type"))) ct :do 
-    (dolist (e es) (let ((k (aget e "index"))) (if (> k m) (setf m k))))
-    (match :v (null es) T :do nil
-        :exit (update-push-aclosure ac :stage "evaluating" :av "left" es 
-                  :av "array" (let ((c nil)) 
-                      (dotimes (k (1+ m) c) 
-                          (setf c (cons (mo "cell" :av "value" v :av "type" ct) 
-                                        c)))))
-              (clear-update-eval-aclosure ac :instance (aget (car es) "value"))))
+(aspect "opsem::rvalue" :context ac :type "slice lit" :instance i 
+  :stage "fill defaults" :value v :ap i "elements" es :p -1 m 
+  :p (mo "pointer type" :av "type" (mo "pointer type" 
+  :av "type" (aget i "type" "elem type"))) ct :do 
+    
+  (dolist (e es) (let ((k (aget e "index"))) (if (> k m) (setf m k))))
+  (match :v (null es) T 
+  :do nil
+  :exit (update-push-acontext ac :stage "evaluating" :av "left" es 
+          :av "array" (let ((a nil)) (dotimes (k (1+ m) a) 
+          (setf a (cons (mo "cell" :av "value" v :av "type" ct) a)))))
+        (clear-update-eval-acontext ac 
+          :instance (aget (car es) "value"))))
 \end{ABMLCode}
 
-После вычисления всех явных элементов возвращается их список в правильном порядке.
+На стадии \ABMLString{evaluating}, после вычисления всех явно заданных элементов, возвращает их список в правильном порядке.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "slice lit" :instance i :stage "evaluating" 
-    :ap ac "left" left :ap ac "array" arr :value v :p (aget (car left) "index") k :do 
-    (let ((c arr)) 
-        (dotimes (j k (setf (car c) "value" v)) 
-            (setf c (cdr c))))
-    (match :v (null left) T :do (reverse arr) 
-        :exit (update-push-aclosure ac :av "left" (cdr left) :av "array" arr)
-              (clear-update-eval-aclosure ac 
-                  :instance (aget (car (cdr left)) "value"))))
+(aspect "opsem::rvalue" :context ac :type "slice lit" :instance i 
+  :stage "evaluating" :ap ac "left" left :ap ac "array" arr 
+  :value v :p (aget (car left) "index") k :do 
+    
+  (let ((c arr)) 
+    (dotimes (j k (setf (car c) "value" v)) (setf c (cdr c))))
+  (match :v (null left) T 
+  :do (reverse arr) 
+  :exit (update-push-acontext ac :av "left" (cdr left) :av "array" arr)
+        (clear-update-eval-acontext ac 
+          :instance (aget (car (cdr left)) "value"))))
 \end{ABMLCode}
 
-На последнем этапе создается значение среза, ссылающееся на созданный массив.
+На последней стадии \ABMLString{build value} создается значение среза, ссылающееся на созданный массив.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "slice lit" :instance i :stage "build value" 
-    :value arr :ap i "type" stp :ap stp "elem type" etp :p (length arr) n :do 
-    (mo "slice value" 
-        :av "type" (aget i "type")
-        :av "array" (mo "array value" 
-            :av "type" (mo "array type" :av "elem type" etp :av "len" n) 
-            :av "elements" arr)
-        :av "offset" 0 
-        :av "length" n
-        :av "capacity" n))
+(aspect "opsem::rvalue" :context ac :type "slice lit" :instance i 
+  :stage "build value" :value arr :ap i "type" stp 
+  :ap stp "elem type" etp :p (length arr) n :do 
+    
+  (mo "slice value" 
+    :av "type" (aget i "type")
+    :av "array" (mo "array value" :av "type" (mo "array type" 
+      :av "elem type" etp :av "len" n) :av "elements" arr)
+    :av "offset" 0 
+    :av "length" n
+    :av "capacity" n))
 \end{ABMLCode}
 
-\subsection{Литерал структуры}
-Вычисление литерала структуры включает заполнение полей значениями по умолчанию.
+\subsubsection{Литерал структуры}
+Если структура имеет хотя бы одно поле, то вычисляет значение по умолчанию для первого поля структуры и отправляет на следующую стадию.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "struct lit" :instance i :stage nil 
-    :p (aget i "type" "fields") tfs :p (attributes tfs) tns :do 
-    (update-push-aclosure ac :stage "eval field values")
-    (match :v (null ns) T :do nil 
-        :exit (update-push-aclosure ac :stage "filling defaults" 
-                   :av "type field names" tns 
-                   :av "struct value" (mo :amap "field name" "cell"))
-              (clear-update-eval-aclosure ac :attribute "default value by type" 
-                  :instance (aget tfs (car tns))))))
+(aspect "opsem::rvalue" :context ac :type "struct lit" :instance i 
+  :stage nil :p (aget i "type" "fields") tfs 
+  :p (attributes tfs) tns :do 
+  
+  (update-push-acontext ac :stage "build value")
+  (update-push-acontext ac :stage "eval field values")
+  (match :v (null ns) T :do nil 
+  :exit (update-push-acontext ac 
+          :stage "filling defaults" 
+          :av "type field names" tns 
+          :av "struct value" (mo :amap "field name" "cell"))
+        (clear-update-eval-acontext ac 
+          :aspect "default value by type" 
+          :instance (aget tfs (car tns)))))
 \end{ABMLCode}
 
-Затем явно заданные значения заменяют значения по умолчанию.
+На стадии \ABMLString{filling defaults} все поля получают значения по умолчанию в соответствии с собственным типом.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "struct lit" :instance i :stage "filling defaults" 
-    :ap ac "type field names" tns :ap ac "struct value" sv :value dv 
-    :p (mo "pointer type" :av "type" (mo "pointer type" 
-            :av "type" (aget i "type" "fields" (car tns)))) ct :do 
-    (aset sv (car tns) (mo "cell" :av "value" dv :av "type" ct))
-    (match :v (null tns) T :do sv 
-        :exit (update-push-aclosure ac :av "type field names" (cdr tns) 
-                   :av "struct value" sv)
-              (clear-update-eval-aclosure ac :attribute "default value by type" 
-                  :instance (aget (aget i "type" "fields") (car (cdr tns))))))
+(aspect "opsem::rvalue" :context ac :type "struct lit" :instance i 
+  :stage "filling defaults" :ap ac "type field names" tns 
+  :ap ac "struct value" sv :value dv 
+  :p (mo "pointer type" :av "type" (mo "pointer type" :av "type" 
+  (aget i "type" "fields" (car tns)))) ct :do 
+    
+  (aset sv (car tns) (mo "cell" :av "value" dv :av "type" ct))
+  (match :v (null tns) T 
+  :do sv 
+  :exit (update-push-acontext ac :av "type field names" (cdr tns) 
+          :av "struct value" sv)
+        (clear-update-eval-acontext ac :aspect "default value by type" 
+          :instance (aget (aget i "type" "fields") (car (cdr tns))))))
 \end{ABMLCode}
 
-Финальное значение структуры создается после обработки всех полей.
+На стадии \ABMLString{eval field values} все явно перечисленные поля получают заданные значения.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "struct lit" :instance i :stage "build value" 
-    :value sv :do (mo "struct value" :av "type" (aget i "type") :av "fields" sv))
+(aspect "opsem::rvalue" :context ac :type "struct lit" :instance i 
+  :stage "eval field values" :value sv 
+  :ap i "fields" fs :p (attributes fs) ns :do 
+  
+  (match :v (null ns) T 
+  :do sv 
+  :exit (update-push-acontext ac :stage "evaluating" :av "names" ns 
+                                 :av "struct value" sv)
+        (clear-update-eval-acontext ac :instance (aget fs (car ns)))))
 \end{ABMLCode}
 
-\subsection{Литерал карты}
-Вычисление литерала карты происходит путем последовательного вычисления пар 
+На стадии \ABMLString{evaluating} вычисляется очередное явно заданное значение поля структуры.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "struct lit" :instance i 
+  :stage "evaluating" :ap ac "names" ns :ap ac "struct value" sv 
+  :ap i "fields" fs :value v :do 
+  
+  (aset sv (car ns) "value" v)
+  (match :v (null (cdr ns)) T 
+  :do sv 
+  :exit (update-push-acontext ac :av "names" (cdr ns) 
+          :av "struct value" sv)
+        (clear-update-eval-acontext ac 
+          :instance (aget fs (car (cdr ns))))))
+\end{ABMLCode}
+
+На стадии \ABMLString{build value} создается и возвращается значение структуры.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "struct lit" :instance i 
+  :stage "build value" :value sv :do 
+  
+  (mo "struct value" :av "type" (aget i "type") :av "fields" sv))
+\end{ABMLCode}
+
+\subsubsection{Литерал карты}
+Вычисление литерала карты начинается с последовательного вычисления пар 
 ключ-значение.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "map lit" :instance i :stage nil 
-    :ap i "elements" es :do 
-    (update-push-aclosure ac :stage "build value")
-    (match :v (null es) T :do nil 
-        :exit (update-push-aclosure ac :stage "evaluating" 
-                   :av "entries" (mo :amap "Go value" "cell") 
-                   :ap "elements" (cdr es))
-              (clear-update-eval-aclosure ac :instance (car es) 
-                  :av "elem type" (aget i "type" "elem type")))))
+(aspect "opsem::rvalue" :context ac :type "map lit" :instance i 
+  :stage nil :ap i "elements" es :do 
+  
+  (update-push-acontext ac :stage "build value")
+  (match :v (null es) T 
+  :do nil 
+  :exit (update-push-acontext ac 
+          :stage "evaluating" 
+          :av "entries" (mo :amap "Go value" "cell") 
+          :ap "elements" (cdr es))
+        (clear-update-eval-acontext ac :instance (car es) 
+          :av "elem type" (aget i "type" "elem type"))))
 \end{ABMLCode}
 
-Каждая пара обрабатывается отдельным замыканием.
+На стадии \ABMLString{evaluating} добавляются вычисленные записи.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "map lit" :instance i :stage "evaluating" 
-    :ap ac "entries" ent :ap ac "elements" es :value ke :do 
-    (aset ent (aget ke "key") (aget ke "value"))
-    (match :v (null es) T :do ent 
-        :exit (update-push-aclosure ac :av "entries" ent :av "elements" (cdr es))
-              (update-push-aclosure ac :instance (car es)))
-    (clear-update-eval-aclosure ac :instance (aget (car es) "key") 
-        :av "elem type" (aget i "type" "elem type")))
+(aspect "opsem::rvalue" :context ac :type "map lit" :instance i 
+  :stage "evaluating" :ap ac "entries" ent 
+  :ap ac "elements" es :value ke :do 
+    
+  (aset ent (aget ke "key") (aget ke "value"))
+  (match :v (null es) T :do ent 
+  :exit (update-push-acontext ac :av "entries" ent 
+          :av "elements" (cdr es))
+        (update-push-acontext ac :instance (car es)))
+        (clear-update-eval-acontext ac :instance (aget (car es) "key") 
+          :av "elem type" (aget i "type" "elem type")))
 \end{ABMLCode}
 
-После вычисления всех пар создается итоговая карта.
+На стадии \ABMLString{build value} создается и возвращается значение карты.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "map lit" :instance i :stage "build value" 
-    :value ent :do (mo "map value" :av "type" (aget i "type") :av "entries" ent))
+(aspect "opsem::rvalue" :context ac :type "map lit" :instance i 
+  :stage "build value" :value ent :do 
+  
+  (mo "map value" :av "type" (aget i "type") :av "entries" ent))
 \end{ABMLCode}
 
-\subsection{Литерал функции}
-Функциональные литералы создают значения функций, сохраняя текущее состояние 
-замыкания — ячейки памяти всех переменных, видимых в момент создания.
+Теперь разберем вычисление записей карты. Оно начинается с вычисления значения.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "function lit" :instance i 
-    :agent a :p (aget i "body" "all variables") ns :p nil c :do 
-    (dolist (item ns) 
-        (setf c (aset c (aget a "variable cell" item))))
-    (mo "function value" :av "type"      (aget i "type")
-                         :av "signature" (aget i "signature")
-                         :av "body"      (aget i "body")
-                         :av "closure"   c))
+(aspect "opsem::rvalue" :context ac :type "keyed elem" :instance i 
+  :stage nil :value k :do 
+  
+  (update-push-acontext ac :stage "eval value" :av "key" k)
+  (clear-update-eval-acontext ac :instance (aget i "value")))
 \end{ABMLCode}
 
-\subsection{Литерал метода}
+Затем, на стадии \ABMLString{eval value} создается и возвращается запись карты.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "keyed elem" :instance i 
+  :stage "eval value" :ap ac "key" k :ap ac "elem type" et :value v :do 
+  
+  (mo "keyed value" :av "key" k :av "value" 
+    (mo "cell" :av "value" v 
+               :av "type" (mo "pointer type" :av "type" et))))
+\end{ABMLCode}
+
+
+\subsubsection{Литерал функции}
+Функциональные литералы создают значения функций, сохраняя текущее состояние  замыкания — ячейки памяти всех переменных, видимых в момент создания.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "function lit" :instance i 
+  :agent a :p (aget i "body" "all variables") ns :p nil c :do 
+  
+  (dolist (item ns) (setf c (aset c (aget a "variable cell" item))))
+  (mo "function value" :av "type"      (aget i "type")
+                       :av "signature" (aget i "signature")
+                       :av "body"      (aget i "body")
+                       :av "closure"   c))
+\end{ABMLCode}
+
+\subsubsection{Литерал метода}
 Аналогично создается значение метода.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "method lit" :instance i 
-    :agent a :p (aget i "body" "all variables") ns :p nil c :do 
-    (dolist (item ns) 
-        (setf c (aset c (aget a "variable cell" item))))
-    (mo "method value"  :av "type"      (aget i "type")
-                         :av "signature" (aget i "signature")
-                         :av "body"      (aget i "body")
-                         :av "closure"   c))
+(aspect "opsem::rvalue" :context ac :type "method lit" :instance i 
+  :agent a :p (aget i "body" "all variables") ns :p nil c :do 
+  
+  (dolist (item ns) (setf c (aset c (aget a "variable cell" item))))
+  (mo "method value"  :av "type"      (aget i "type")
+                      :av "signature" (aget i "signature")
+                      :av "body"      (aget i "body")
+                      :av "closure"   c))
 \end{ABMLCode}
+
 
 \subsection{Выражения}
 
 \subsubsection{Ссылка на переменную}
-Для ссылки на переменную определены два замыкания: для получения левого значения 
-(lvalue) — ячейки памяти, и для получения правого значения (rvalue) — содержимого 
-ячейки.
+Для ссылки на переменную определены два варианта вычисления: для получения левого значения (lvalue) — ячейки памяти, и для получения правого значения (rvalue) — содержимого ячейки.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::lvalue" :type "variable ref" 
-    :instance i :agent a :do (aget a "variable cell" i))
-(aclosure ac :attribute "opsem::rvalue" :type "variable ref" 
-    :instance i :agent a :do (aget (aget a "variable cell" i) "value"))
+(aspect "opsem::lvalue" :context ac :type "variable ref" :instance i 
+  :agent a :do (aget a "variable cell" i))
+
+(aspect "opsem::rvalue" :context ac :type "variable ref" :instance i 
+  :agent a :do (aget (aget a "variable cell" i) "value"))
 \end{ABMLCode}
 
 \subsubsection{Выражение в скобках}
 Выражение в скобках вычисляет свое содержимое.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "(1)" :instance i :do 
-    (clear-update-eval-aclosure ac :instance (aget i 1)))
+(aspect "opsem::rvalue" :context ac :type "(1)" :instance i :do 
+    (clear-update-eval-acontext ac :instance (aget i 1)))
 \end{ABMLCode}
 
 \subsubsection{Приведение типов}
-Приведение типов вычисляет значение и преобразует его к указанному типу.
+Вычисление выражения приведения типов начинается с вычисления значения, которое необходимо привести к другому типу.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "conversion" 
-    :instance i :stage nil :do 
-    (update-push-aclosure ac :stage "conversion")
-    (clear-update-eval-aclosure ac :instance (aget i "value")))
+(aspect "opsem::rvalue" :context ac :type "conversion" :instance i 
+  :stage nil :do 
+  
+  (update-push-acontext ac :stage "type from")
+  (clear-update-eval-acontext ac :instance (aget i "value")))
 \end{ABMLCode}
+
+На стадии \ABMLString{type from} происходит определение типа вычисленного значения.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "conversion" :instance i 
+  :stage "type from" :value tv :ap tv "type" vtp :do 
+  
+  (update-push-acontext ac :stage "build value")
+  (clear-update-eval-acontext ac :av "typed value" tv :stage (nmatch 
+    :v (is-instance vtp "int type")     T :exit "int type" 
+    :v (is-instance vtp "float type")   T :exit "float type" 
+    :v (is-instance vtp "complex type") T :exit "complex type" 
+    :v (is-instance vtp "string type")  T :exit "string type" 
+    :v (is-instance vtp "slice type")   T :exit "byte type")))
+\end{ABMLCode}
+
+На стадии \ABMLString{int type} рассматривается приведение целого числа к заданному типу. Причем целое число можно привести только к численным типам.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "conversion" :instance i 
+  :stage "int type" :ap ac "typed value" tv :ap tv "value" v 
+  :ap i "type" tp :ap tp "bit size" bs 
+  :p (logand v (1- (ash 1 bs))) x :do 
+  
+  (nmatch 
+  :v (is-instance tp "signed int type")   T 
+  :exit (if (> x (ash 1 (1- bs))) (- x (ash 1 bs)) x) 
+  :v (is-instance tp "unsigned int type") T :exit x 
+  :v (is-instance tp "float type")        T :exit (float v 0.0d0)))
+\end{ABMLCode}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Отсюда и далее НЕ правленная версия}
+
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "float type" 
+    :ap ac "typed value" tv :ap tv "value" v :ap i "type" tp 
+    :ap tp "bit size" bs :p (logand v (1- (ash 1 bs))) x :do 
+    (nmatch 
+    :v (is-instance tp "signed int type")   T 
+    :exit (let ((p (truncate x 1))) (if (> p (ash 1 (1- bs))) (- p (ash 1 bs)) p))
+    :v (is-instance tp "unsigned int type") T :exit (truncate x 1)
+    :v (is-instance tp "float type")        T :exit v)
+)
+\end{ABMLCode}
+
+
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "complex type" 
+    :ap ac "typed value" tv :ap tv "value" v
+    :p (mo "float type" :av "bit size" (aget i "type" "bit size")) ctp 
+    :p (mo "float type" :av "bit size" (aget tv "type" "bit size")) vtp :do 
+    (update-push-acontext ac :stage "complex eval im" :av "conversion type" ctp 
+        :av "im" (mo "typed primitive" :av "type" vtp :av "value" (imagpart v)))
+    (clear-update-eval-acontext ac :instance (mo "conversion" :av "type" ctp 
+        :av "value" (mo "typed primitive" :av "type" vtp :av "value" (realpart v))))
+)
+\end{ABMLCode}
+
+
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "conversion" :stage "complex eval im" 
+    :ap ac "im" im :ap ac "conversion type" ctp :value re :do 
+    (update-push-acontext ac :stage "complex return" :av "re" re)
+    (clear-update-eval-acontext ac :instance (mo "conversion" :av "type" ctp :av "value" im))
+)
+\end{ABMLCode}
+
+
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "conversion" :stage "complex return" 
+    :ap ac "re" re :value im :do (complex (aget re "value") (aget im "value"))
+)
+\end{ABMLCode}
+
+
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "string type" 
+    :ap ac "typed value" tv :ap tv "value" v :ap i "type" tp :do 
+    (nmatch 
+    :v (is-instance tp "string type") T :exit v 
+    :do (mapcar #'char-code (coerce v 'list)))
+)
+\end{ABMLCode}
+
+
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "byte type" 
+    :ap ac "typed value" tv :ap tv "value" sv :ap i "type" tp :ap sv "offset" ofs :do 
+    (let ((lst nil) (cs (aget sv "array" "elements"))) (dotimes (k ofs) (setf cs (cdr cs)))
+    (dotimes (k (aget sv "length") (reverse lst)) (setf lst (cons (aget (car cs) "value") lst)) (setf cs (cdr cs))))
+    (match :v (is-instance tp "string type") nil :do sv 
+    :exit (coerce (mapcar #'code-char lst) 'string))
+)
+\end{ABMLCode}
+
+
+
+
 
 \subsubsection{Метод-выражение}
 Метод-выражение преобразует метод в функцию, где получатель становится 
