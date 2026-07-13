@@ -1,7 +1,7 @@
 #|
 	Operational semantics for the Go language
 
-    Last edit: 29/06/2026
+    Last edit: 11/07/2026
 |#
 
 
@@ -224,19 +224,20 @@
 
 ; Определяет тип вычисленного выражения
 (aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "type from" 
-    :value tv :ap tv "type" vtp :do 
+    :value tv :ap tv "type" ttv :do 
     (update-push-acontext ac :stage "build value")
     (clear-update-eval-acontext ac :av "typed value" tv :stage (nmatch 
-    ; численные типы данных конвертируются между собой
-    :v (is-instance vtp "int type")     T :exit "int type" 
-    :v (is-instance vtp "float type")   T :exit "float type" 
-    :v (is-instance vtp "complex type") T :exit "complex type" 
+    ; целочисленные и вещественные типы данных конвертируются между собой
+    :v (is-instance ttv "int type")     T :exit "int type" 
+    :v (is-instance ttv "float type")   T :exit "float type" 
+    ; комплексные типы только между собой конвертируются
+    :v (is-instance ttv "complex type") T :exit "complex type" 
     ; string, []byte тоже конвертируются между собой
-    :v (is-instance vtp "string type") T :exit "string type" 
-    :v (is-instance vtp "slice type")  T :exit "byte type"))
+    :v (is-instance ttv "string type")  T :exit "string type" 
+    :v (is-instance ttv "slice type")   T :exit "[]byte type"))
 )
 ; Сначала обрезаем старшие биты (если нужно), получаем x
-; Полученный x имеется беззнаковое представление. Если нужно, приводим к знаковому
+; Полученный x находится в беззнаковом представлении. Если нужно, приводим к знаковому
 (aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "int type" 
     :ap ac "typed value" tv :ap tv "value" v :ap i "type" tp 
     :ap tp "bit size" bs :p (logand v (1- (ash 1 bs))) x :do 
@@ -258,26 +259,8 @@
     :v (is-instance tp "float type")        T :exit v)
 )
 ; Комплексные значения можно приводить только к комплексным.
-; Выполним приведение отдельно вещественной и мнимых частей, как float type.
-(aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "complex type" 
-    :ap ac "typed value" tv :ap tv "value" v
-    :p (mo "float type" :av "bit size" (aget i "type" "bit size")) ctp 
-    :p (mo "float type" :av "bit size" (aget tv "type" "bit size")) vtp :do 
-    (update-push-acontext ac :stage "complex eval im" :av "conversion type" ctp 
-        :av "im" (mo "typed primitive" :av "type" vtp :av "value" (imagpart v)))
-    (clear-update-eval-acontext ac :instance (mo "conversion" :av "type" ctp 
-        :av "value" (mo "typed primitive" :av "type" vtp :av "value" (realpart v))))
-)
-; Сохраняет вычисленную вещественную часть. Отправляет вычислять мнимую часть
-(aspect "opsem::rvalue" :context ac :type "conversion" :stage "complex eval im" 
-    :ap ac "im" im :ap ac "conversion type" ctp :value re :do 
-    (update-push-acontext ac :stage "complex return" :av "re" re)
-    (clear-update-eval-acontext ac :instance (mo "conversion" :av "type" ctp :av "value" im))
-)
-; Возвращает комплексное число по вычисленным значениям составляющих
-(aspect "opsem::rvalue" :context ac :type "conversion" :stage "complex return" 
-    :ap ac "re" re :value im :do (complex (aget re "value") (aget im "value"))
-)
+; Ничего делать не требуется, поскольку в данной реализации все дробные числа имеют lisp точность double-float
+(aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "complex type" :value v :do v)
 ; Нетривиальный случай только для среза битов
 (aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "string type" 
     :ap ac "typed value" tv :ap tv "value" v :ap i "type" tp :do 
@@ -285,9 +268,9 @@
     :v (is-instance tp "string type") T :exit v 
     :do (mapcar #'char-code (coerce v 'list)))
 )
-; Сначала из среза вытаскивает значения, на которые он ссылкается
+; Сначала из среза вытаскивает значения, на которые он ссылается
 ; Затем превращет полученный список в строку
-(aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "byte type" 
+(aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "[]byte type" 
     :ap ac "typed value" tv :ap tv "value" sv :ap i "type" tp :ap sv "offset" ofs :do 
     (let ((lst nil) (cs (aget sv "array" "elements"))) (dotimes (k ofs) (setf cs (cdr cs))) ; cs - элементы, на которые указывает срез (справа могут быть лишние)
     (dotimes (k (aget sv "length") (reverse lst)) (setf lst (cons (aget (car cs) "value") lst)) (setf cs (cdr cs))))

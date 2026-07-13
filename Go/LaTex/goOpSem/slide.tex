@@ -1291,18 +1291,18 @@ Nil-значение, что встречается в предыдущей ко
 
 \begin{ABMLCode}
 (aspect "opsem::rvalue" :context ac :type "conversion" :instance i 
-  :stage "type from" :value tv :ap tv "type" vtp :do 
-  
+  :stage "type from" :value tv :ap tv "type" ttv :do 
+    
   (update-push-acontext ac :stage "build value")
   (clear-update-eval-acontext ac :av "typed value" tv :stage (nmatch 
-    :v (is-instance vtp "int type")     T :exit "int type" 
-    :v (is-instance vtp "float type")   T :exit "float type" 
-    :v (is-instance vtp "complex type") T :exit "complex type" 
-    :v (is-instance vtp "string type")  T :exit "string type" 
-    :v (is-instance vtp "slice type")   T :exit "byte type")))
+  :v (is-instance ttv "int type")     T :exit "int type" 
+  :v (is-instance ttv "float type")   T :exit "float type" 
+  :v (is-instance ttv "complex type") T :exit "complex type" 
+  :v (is-instance ttv "string type")  T :exit "string type" 
+  :v (is-instance ttv "slice type")   T :exit "[]byte type")))
 \end{ABMLCode}
 
-На стадии \ABMLString{int type} рассматривается приведение целого числа к заданному типу. Причем целое число можно привести только к численным типам.
+На стадии \ABMLString{int type} рассматривается приведение целого числа к заданному типу. Причем целое число можно привести только к численным типам: знаковые, беззнаковые или вещественные.
 
 \begin{ABMLCode}
 (aspect "opsem::rvalue" :context ac :type "conversion" :instance i 
@@ -1316,6 +1316,92 @@ Nil-значение, что встречается в предыдущей ко
   :v (is-instance tp "unsigned int type") T :exit x 
   :v (is-instance tp "float type")        T :exit (float v 0.0d0)))
 \end{ABMLCode}
+
+На стадии \ABMLString{float type} описывается приведение вещественного числа к заданному типу. Причем вещественное число можно привести только к таким же численным типам, что и в целочисленном случае.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "conversion" :instance i 
+  :stage "float type" :ap ac "typed value" tv :ap tv "value" v 
+  :ap i "type" tp :ap tp "bit size" bs 
+  :p (logand v (1- (ash 1 bs))) x :do 
+  
+  (nmatch 
+  :v (is-instance tp "signed int type")   T 
+  :exit (let ((p (truncate x 1))) (if (> p (ash 1 (1- bs))) (- p (ash 1 bs)) p))
+  :v (is-instance tp "unsigned int type") T :exit (truncate x 1)
+  :v (is-instance tp "float type")        T :exit v))
+\end{ABMLCode}
+
+На стадии \ABMLString{complex type} описывается приведение комплексных чисел. Однако, допускается приведение только между комплексными типами данных. В данной реализации это не представляет разницы, так как все дробные числа хранятся в формате double-float языка lisp.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "conversion" :instance i 
+  :stage "complex type" :value v :do v)
+\end{ABMLCode}
+
+На стадии \ABMLString{string type} нетривиальным случаем является приведение строки к типу среза \ABMLAttribute{byte}. Напомню, что этот тип является аналогом \ABMLAttribute{uint8}.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "conversion" :instance i 
+  :stage "string type" :ap ac "typed value" tv :ap tv "value" v 
+  :ap i "type" tp :do 
+  
+  (nmatch 
+  :v (is-instance tp "string type") T :exit v 
+  :do (mapcar #'char-code (coerce v 'list))))
+\end{ABMLCode}
+
+
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "[]byte type" 
+    :ap ac "typed value" tv :ap tv "value" sv :ap i "type" tp :ap sv "offset" ofs :do 
+    (let ((lst nil) (cs (aget sv "array" "elements"))) (dotimes (k ofs) (setf cs (cdr cs))) ; cs - элементы, на которые указывает срез (справа могут быть лишние)
+    (dotimes (k (aget sv "length") (reverse lst)) (setf lst (cons (aget (car cs) "value") lst)) (setf cs (cdr cs))))
+    (match :v (is-instance tp "string type") nil :do sv 
+    :exit (coerce (mapcar #'code-char lst) 'string))
+)
+\end{ABMLCode}
+
+
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "build value" 
+    :value v :ap i "type" tp :do (mo "typed primitive" :av "type" tp :av "value" v)
+)
+\end{ABMLCode}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1334,34 +1420,7 @@ Nil-значение, что встречается в предыдущей ко
 \section{Отсюда и далее НЕ правленная версия}
 
 
-\begin{ABMLCode}
-(aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "float type" 
-    :ap ac "typed value" tv :ap tv "value" v :ap i "type" tp 
-    :ap tp "bit size" bs :p (logand v (1- (ash 1 bs))) x :do 
-    (nmatch 
-    :v (is-instance tp "signed int type")   T 
-    :exit (let ((p (truncate x 1))) (if (> p (ash 1 (1- bs))) (- p (ash 1 bs)) p))
-    :v (is-instance tp "unsigned int type") T :exit (truncate x 1)
-    :v (is-instance tp "float type")        T :exit v)
-)
-\end{ABMLCode}
-
-
-
-\begin{ABMLCode}
-(aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "complex type" 
-    :ap ac "typed value" tv :ap tv "value" v
-    :p (mo "float type" :av "bit size" (aget i "type" "bit size")) ctp 
-    :p (mo "float type" :av "bit size" (aget tv "type" "bit size")) vtp :do 
-    (update-push-acontext ac :stage "complex eval im" :av "conversion type" ctp 
-        :av "im" (mo "typed primitive" :av "type" vtp :av "value" (imagpart v)))
-    (clear-update-eval-acontext ac :instance (mo "conversion" :av "type" ctp 
-        :av "value" (mo "typed primitive" :av "type" vtp :av "value" (realpart v))))
-)
-\end{ABMLCode}
-
-
-
+На стадии \ABMLString{complex eval im}
 \begin{ABMLCode}
 (aspect "opsem::rvalue" :context ac :type "conversion" :stage "complex eval im" 
     :ap ac "im" im :ap ac "conversion type" ctp :value re :do 
