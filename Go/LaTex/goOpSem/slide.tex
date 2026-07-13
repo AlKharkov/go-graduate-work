@@ -76,7 +76,7 @@
     morekeywords={
         let, car, cdr, dotimes, setf, cons, reverse, length, list, dolist, 
         and, or, not, null, ash, nil, subseq, mod, rem, logand, logior,
-        logxor, lognot, logeqv, logorc, coerce, T
+        logxor, lognot, logeqv, logorc, coerce, T, mapcar, if, defun, map
     },
     keywordstyle=\color{abmlLisp}\bfseries,
     classoffset=0,
@@ -257,6 +257,7 @@
 
 Классификация и порядок изложения опираются на официальную спецификацию языка Go. Большинство наименований моделируемых объектов соответствуют их названиям в спецификации. Однако, часть конструкций языка или их составляющих не имеет уникальных наименований, или их названия связаны с синтаксисом, что не позволяет достаточно точно определять их смысл в различных контекстах.
 
+% ============================== ИМЕНА ==============================
 \subsection{Имена}
 Все имена в программе на Go моделируются как строки. Вводятся следующие типы имен:
 
@@ -272,6 +273,7 @@
 (typedef "type name"      "identifier")
 \end{ABMLCode}
 
+% ============================== ТИПЫ ДАННЫХ ==============================
 \subsection{Типы данных}
 Система типов языка Go разделяется на базовые (простые) и составные типы.
 
@@ -283,7 +285,8 @@
 Базовые типы включают логический, строковый и числовые.
 
 \begin{ABMLCode}
-(typedef "primitive type" (uniont "bool type" "string type" "numeric type"))
+(typedef "primitive type" (uniont "bool type" "string type" 
+                                  "numeric type"))
 (cot "bool type")
 (cot "string type")
 \end{ABMLCode}
@@ -304,9 +307,10 @@
 Тип составных объектов включает в себя типы массивов, срезов, структур, указателей, функций, методов, интерфейсов, карт и каналов.
 
 \begin{ABMLCode}
-(typedef "composite type" (uniont "array type" "slice type" "struct type" 
-                                  "pointer type" "function type" "method type"
-                                  "interface type" "map type" "channel type"))
+(typedef "composite type" 
+    (uniont "array type" "slice type" "struct type" 
+            "pointer type" "function type" "method type"
+            "interface type" "map type" "channel type"))
 \end{ABMLCode}
 
 Тип массивов содержит информацию о типе элементов и фиксированной длине. Срезы — только тип элементов, поскольку длина среза определяется динамически.
@@ -352,7 +356,8 @@
 Тип интерфейсов определяется как набор реализуемых методов с их сигнатурами. 
 
 \begin{ABMLCode}
-(cot "interface type" :at "methods" (cot :amap "method name" "method type"))
+(cot "interface type" 
+    :at "methods" (cot :amap "method name" "method type"))
 \end{ABMLCode}
 
 Тип карт задается типами ключа и значения. 
@@ -367,6 +372,8 @@
 (cot "channel type" :at "elem type" "type")
 \end{ABMLCode}
 
+
+% ======================== ЯЧЕЙКИ ПАМЯТИ И ЗНАЧЕНИЯ =========================
 \subsection{Ячейки памяти и значения}
 В данной работе модель памяти представлена типизированными значениями. То есть каждое значение имеет собственный тип, известный еще до этапа выполнения программы. 
 
@@ -374,7 +381,8 @@
 
 \begin{ABMLCode}
 (mot "cell" :at "value" "Go value" :at "type" "type")
-(typedef "Go value" (uniont "untyped constant" "typed primitive" "composite value"))
+(typedef "Go value" (uniont "untyped constant" "typed primitive" 
+                            "composite value"))
 \end{ABMLCode}
 
 Нетипизированные константы существуют только на этапе статического анализа. До начала выполнения программы в операционной семантике они преобразуются в типизированные значения.
@@ -400,9 +408,10 @@ Nil-значение, что встречается в предыдущей ко
 Составные значения моделируют структуры данных языка Go.
 
 \begin{ABMLCode}
-(typedef "composite value" (uniont "array value" "slice value" "struct value" 
-                                   "map value" "interface value" "method value"
-                                   "function value" "cell" "channel value"))
+(typedef "composite value" 
+    (uniont "array value" "slice value" "struct value" 
+            "map value" "interface value" "method value"
+            "function value" "cell" "channel value"))
 \end{ABMLCode}
 
 Массив хранит элементы в виде списка ячеек, что обеспечивает возможность изменения элементов. Однако, длина массива определяется собственным типом, и изменяться не может.
@@ -499,12 +508,15 @@ Nil-значение, что встречается в предыдущей ко
 	:at "value" "typed value")
 \end{ABMLCode}
 
+
+% ================================= ЛИТЕРАЛЫ =================================
 \subsection{Литералы}
 Литералы представляют собой значения, которые могут быть непосредственно записаны в исходном коде. Общий тип литерала объединяет типизированные константы и составные литералы.
 
 \begin{ABMLCode}
-(typedef "literal" (uniont "untyped constant" "numeric lit" 
-		"composite lit" "function lit" "method lit"))
+(typedef "literal" 
+    (uniont "untyped constant" "numeric lit" 
+            "composite lit" "function lit" "method lit"))
 \end{ABMLCode}
 
 Числовые литералы используются для задания чисел с помощью различных представлений.
@@ -517,10 +529,10 @@ Nil-значение, что встречается в предыдущей ко
 
 \begin{ABMLCode}
 (typedef "composite lit" (uniont "array lit" "slice lit" 
-                                  "struct lit" "map lit"))
+                                 "struct lit" "map lit"))
 \end{ABMLCode}
 
-Литералы массивов и срезов могут задаваться с явным указанием индекса для каждого значения. Каждый такой элемент представлен парой \ABMLType{index \& elem}.
+Литералы массивов и срезов могут задаваться с явным указанием индекса для каждого значения. Каждый такой элемент представлен парой \ABMLString{index \& elem}.
 
 \begin{ABMLCode}
 (mot "index & elem" :at "index" nat :at "value" "expression")
@@ -534,7 +546,7 @@ Nil-значение, что встречается в предыдущей ко
 	:at "elements" (listt "index & elem"))
 \end{ABMLCode}
 
-Литералы структур могут объявляться с явным указанием имени поля для каждого значения. Каждый такой элемент представлен парой \ABMLType{field \& value}.
+Литералы структур могут объявляться с явным указанием имени поля для каждого значения. Каждый такой элемент представлен парой \ABMLString{field \& value}.
 
 \begin{ABMLCode}
 (mot "field & value" :at "field" "field name" :at "value" "expression")
@@ -568,11 +580,14 @@ Nil-значение, что встречается в предыдущей ко
 	:at "body"      "block")
 \end{ABMLCode}
 
+
+% ================================ ВЫРАЖЕНИЯ ================================
 \subsection{Выражения}
 Выражения в языке Go — это конструкции, которые после вычисления возвращают значение. Все выражения содержат атрибут \ABMLString{type}, значение которого вычисляется на этапе статического анализа.
 
 \begin{ABMLCode}
-(typedef "expression" (uniont "literal" "variable ref" "(1)" 
+(typedef "expression" 
+    (uniont "literal" "variable ref" "(1)" 
 		"conversion" "method expr" "selector expr" "index expr" 
 		"slice expr" "type assertion" "<-1" "function call" 
 		"unary expression" "binary expression"))
@@ -672,12 +687,14 @@ Nil-значение, что встречается в предыдущей ко
 Бинарные выражения также используют цифровую нотацию: \ABMLString{1} — левый операнд, \ABMLString{2} — правый.
 
 \begin{ABMLCode}
-(typedef "binary expression" (uniont "1||2" "1&&2" "1+2" "1-2" "1*2" 
-				     "1/2" "1%2" "1<<2" "1>>2" "1&2" 
-				     "1&^2"  "1|2" "1^2" "1==2" "1!=2" 
-				     "1<2" "1<=2" "1>2" "1>=2"))
+(typedef "binary expression" 
+    (uniont "1||2" "1&&2" "1+2" "1-2" "1*2" "1/2" "1%2" 
+            "1<<2" "1>>2" "1&2" "1&^2"  "1|2" "1^2" 
+            "1==2" "1!=2" "1<2" "1<=2" "1>2" "1>=2"))
 \end{ABMLCode}
 
+
+% ================================== БЛОКИ ==================================
 \subsection{Блоки}
 Блоки определяют области видимости переменных и меток. В языке Go блок представляет собой последовательность операторов, заключенную в фигурные скобки.
 
@@ -696,6 +713,8 @@ Nil-значение, что встречается в предыдущей ко
 \ABMLString{variable cells} сохраняет для каждой переменной ее ячейку памяти до входа 
 в блок, что позволяет корректно обрабатывать затенение имен переменных.
 
+
+% ================================ ДЕКЛАРАЦИИ ================================
 \subsection{Декларации}
 Декларации вводят новые объекты в программу.
 
@@ -727,20 +746,24 @@ Nil-значение, что встречается в предыдущей ко
 Декларация функций и методов.
 
 \begin{ABMLCode}
-(mot "function decl" :at "name" "function name" :at "value" "function lit")
-(mot "method decl"   :at "name" "method name"   :at "value" "method lit")
+(mot "function decl" :at "name" "function name" 
+                     :at "value" "function lit")
+
+(mot "method decl"   :at "name" "method name"   
+                     :at "value" "method lit")
 \end{ABMLCode}
 
+
+% ================================ ОПЕРАТОРЫ ================================
 \subsection{Операторы}
 Операторы в языке Go представляют собой конструкции, которые изменяют состояние программы, но не возвращают значений.
 
 \begin{ABMLCode}
-(typedef "statement" (uniont "declaration" "label" "empty stmt" "1++" 
-			     "1--" "assignment stmt" "if stmt" 
-			     "switch stmt" "for stmt" "return stmt" 
-			     "break stmt" "continue stmt" 
-			     "goto stmt" "defer stmt" "go stmt" 
-			     "1<-2" "fallthrough" "select stmt"))
+(typedef "statement" 
+    (uniont "declaration" "label" "empty stmt" "1++" "1--" 
+            "assignment stmt" "if stmt" "switch stmt" "for stmt" 
+            "return stmt" "break stmt" "continue stmt" "goto stmt" 
+            "defer stmt" "go stmt" "1<-2" "fallthrough" "select stmt"))
 \end{ABMLCode}
 
 Помеченный оператор позволяет присвоить метку любому оператору программы.
@@ -765,9 +788,9 @@ Nil-значение, что встречается в предыдущей ко
 Операторы присваивания включают как простое присваивание, так и составные с арифметическими и битовыми операциями.
 
 \begin{ABMLCode}
-(typedef "assignment stmt" (uniont "1=2" "1+=2" "1-=2" "1*=2" "1/=2" 
-				   "1%=2" "1<<=2" "1>>=2" "1^=2" 
-				   "1|=2" "1&=2" "1&^=2"))
+(typedef "assignment stmt" 
+    (uniont "1=2" "1+=2" "1-=2" "1*=2" "1/=2" "1%=2" 
+            "1<<=2" "1>>=2" "1^=2" "1|=2" "1&=2" "1&^=2"))
 
 (mot "1=2"   :at 1 (listt "expression") :at 2 (listt "expression"))
 (mot "1+=2"  :at 1 (listt "expression") :at 2 (listt "expression"))
@@ -946,6 +969,8 @@ Nil-значение, что встречается в предыдущей ко
 
 Вычисление происходит в контексте окружения — агента, который хранит информацию о переменных, константах, функциях и типах. Каждый шаг вычисления представлен декларацией аспекта (\ABMLKeyword{aspect}), которая задает атрибут \ABMLString{opsem::rvalue} для выражений, возвращающих значения, \ABMLString{opsem::lvalue} для получения ячеек памяти, и \ABMLString{opsem}  для конструкций языка, не возвращающих значений.
 
+
+% ============================ ОКРУЖЕНИЕ И АГЕНТЫ ============================
 \subsection{Окружение и агенты}
 Окружение представляет собой совокупность агентов, каждый из которых моделирует 
 состояние выполнения программы. Атрибут \ABMLString{value} автоматически заполняется последним вычисленным этим агентом значением. Остальные 5 атрибутов хранят отношения декларируемых в программе имен к значениям констант, переменных, функций, методов и пользовательских типов соответственно.
@@ -963,6 +988,8 @@ Nil-значение, что встречается в предыдущей ко
   :at "value"          "Go value")
 \end{ABMLCode}
 
+
+% ====================== Базовое правило для значений ======================
 \subsection{Базовое правило для значений}
 Если выражение уже является значением, оно возвращается без изменений.
 
@@ -970,6 +997,8 @@ Nil-значение, что встречается в предыдущей ко
 (aspect "opsem::rvalue" :context ac :type "Go value" :instance i :do i)
 \end{ABMLCode}
 
+
+% =============================== Литералы ===============================
 \subsection{Литералы}
 Здесь и далее будет описываться вычисление соответствующих конструкций онтологической модели. Повторно приводиться их описание не будет.
 
@@ -1255,6 +1284,7 @@ Nil-значение, что встречается в предыдущей ко
 \end{ABMLCode}
 
 
+% =============================== Выражения ===============================
 \subsection{Выражения}
 
 \subsubsection{Ссылка на переменную}
@@ -1339,7 +1369,7 @@ Nil-значение, что встречается в предыдущей ко
   :stage "complex type" :value v :do v)
 \end{ABMLCode}
 
-На стадии \ABMLString{string type} нетривиальным случаем является приведение строки к типу среза \ABMLAttribute{byte}. Напомню, что этот тип является аналогом \ABMLAttribute{uint8}.
+На стадии \ABMLString{string type} нетривиальным случаем является приведение строки к типу среза \GoKeyword{byte}. Напомню, что этот тип является аналогом \GoKeyword{uint8}.
 
 \begin{ABMLCode}
 (aspect "opsem::rvalue" :context ac :type "conversion" :instance i 
@@ -1351,634 +1381,1440 @@ Nil-значение, что встречается в предыдущей ко
   :do (mapcar #'char-code (coerce v 'list))))
 \end{ABMLCode}
 
-
-
-\begin{ABMLCode}
-(aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "[]byte type" 
-    :ap ac "typed value" tv :ap tv "value" sv :ap i "type" tp :ap sv "offset" ofs :do 
-    (let ((lst nil) (cs (aget sv "array" "elements"))) (dotimes (k ofs) (setf cs (cdr cs))) ; cs - элементы, на которые указывает срез (справа могут быть лишние)
-    (dotimes (k (aget sv "length") (reverse lst)) (setf lst (cons (aget (car cs) "value") lst)) (setf cs (cdr cs))))
-    (match :v (is-instance tp "string type") nil :do sv 
-    :exit (coerce (mapcar #'code-char lst) 'string))
-)
-\end{ABMLCode}
-
-
+На стадии \ABMLString{[]byte type} в нетривиальном случае сначала строится список lst значений полученного среза. Потом этот список преобразуется в строку, которая и возвращается.
 
 \begin{ABMLCode}
-(aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "build value" 
-    :value v :ap i "type" tp :do (mo "typed primitive" :av "type" tp :av "value" v)
-)
+(aspect "opsem::rvalue" :context ac :type "conversion" :instance i 
+  :stage "[]byte type" :ap ac "typed value" tv :ap tv "value" sv 
+  :ap i "type" tp :ap sv "offset" ofs :do 
+  
+  (nmatch :v (is-instance tp "string type") nil :exit sv
+  :p nil lst :p (aget sv "array" "elements") cs :do 
+  (dotimes (k ofs) (setf cs (cdr cs))) 
+  (dotimes (k (aget sv "length") (reverse lst)) 
+    (setf lst (cons (aget (car cs) "value") lst)) (setf cs (cdr cs))) 
+  (coerce (mapcar #'code-char lst) 'string)))
 \end{ABMLCode}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-\section{Отсюда и далее НЕ правленная версия}
-
-
-На стадии \ABMLString{complex eval im}
-\begin{ABMLCode}
-(aspect "opsem::rvalue" :context ac :type "conversion" :stage "complex eval im" 
-    :ap ac "im" im :ap ac "conversion type" ctp :value re :do 
-    (update-push-acontext ac :stage "complex return" :av "re" re)
-    (clear-update-eval-acontext ac :instance (mo "conversion" :av "type" ctp :av "value" im))
-)
-\end{ABMLCode}
-
-
+На стадии \ABMLString{build value} возвращаемое значение оборачивается в объект \ABMLString{typed primitive} для поддержания модели типизированных значений. Причем в случае приведения к типу среза это не требуется.
 
 \begin{ABMLCode}
-(aspect "opsem::rvalue" :context ac :type "conversion" :stage "complex return" 
-    :ap ac "re" re :value im :do (complex (aget re "value") (aget im "value"))
-)
+(aspect "opsem::rvalue" :context ac :type "conversion" :instance i 
+  :stage "build value" :value v :ap i "type" tp 
+  :v (is-instance tp "slice type") nil :do 
+  
+  (mo "typed primitive" :av "type" tp :av "value" v))
 \end{ABMLCode}
-
-
-
-\begin{ABMLCode}
-(aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "string type" 
-    :ap ac "typed value" tv :ap tv "value" v :ap i "type" tp :do 
-    (nmatch 
-    :v (is-instance tp "string type") T :exit v 
-    :do (mapcar #'char-code (coerce v 'list)))
-)
-\end{ABMLCode}
-
-
-
-\begin{ABMLCode}
-(aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "byte type" 
-    :ap ac "typed value" tv :ap tv "value" sv :ap i "type" tp :ap sv "offset" ofs :do 
-    (let ((lst nil) (cs (aget sv "array" "elements"))) (dotimes (k ofs) (setf cs (cdr cs)))
-    (dotimes (k (aget sv "length") (reverse lst)) (setf lst (cons (aget (car cs) "value") lst)) (setf cs (cdr cs))))
-    (match :v (is-instance tp "string type") nil :do sv 
-    :exit (coerce (mapcar #'code-char lst) 'string))
-)
-\end{ABMLCode}
-
-
-
 
 
 \subsubsection{Метод-выражение}
-Метод-выражение преобразует метод в функцию, где получатель становится 
-первым параметром.
+Метод-выражение преобразует метод в функцию, где получатель становится первым параметром.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "method expr" :instance i 
-    :agent a :p (aget a "method value" (aget i "receiver type") 
-                                       (aget i "name")) mv 
-    :ap mv "type" mt :ap mv "signature" ms :do 
-    (mo "function value" 
-        :av "type" (mo "function type" 
-            :av "param types"   (cons (aget mt "receiver type") 
-                                      (aget mt "param types"))
-            :av "variadic type" (aget mt "variadic type")
-            :av "result type"   (aget mt "result types"))
-        :av "signature" (mo "function signature" 
-            :av "parameters"     (cons (aget ms "receiver") 
-                                       (aget ms "parameters"))
-            :av "variadic param" (aget ms "variadic param")
-            :av "result"         (aget ms "result"))
-        :av "body"    (aget mv "body")
-        :av "closure" (aget mv "closure")))
+(aspect "opsem::rvalue" :context ac :type "method expr" :instance i 
+  :p (aget a "method value" (aget i "receiver type") (aget i "name")) mv 
+  :agent a :ap mv "type" mt :ap mv "signature" ms :do 
+  
+  (mo "function value" 
+  :av "type"      (mo "function type" 
+    :av "param types"    (cons (aget mt "receiver type") 
+                               (aget mt "param types"))
+    :av "variadic type"  (aget mt "variadic type")
+    :av "result type"    (aget mt "result types"))
+  :av "signature" (mo "function signature" 
+    :av "parameters"     (cons (aget ms "receiver") 
+                               (aget ms "parameters"))
+    :av "variadic param" (aget ms "variadic param")
+    :av "result"         (aget ms "result"))
+  :av "body"      (aget mv "body")
+  :av "closure"   (aget mv "closure")))
 \end{ABMLCode}
 
 \subsubsection{Выбор поля или метода}
-Выбор поля или метода обрабатывает два случая: когда слева от точки стоит 
-имя типа (интерфейса) — возвращается метод; когда слева стоит структура 
-или указатель на структуру — возвращается поле.
+Выбор поля или метода обрабатывает два случая: когда слева от точки стоит имя типа (интерфейса) — возвращается метод; когда слева стоит структура или указатель на структуру — возвращается поле.
 
+Если слева от точки стоит имя пользовательского типа (в том числе интерфейса), то вычислять ничего не нужно
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "selector expr" 
-    :instance i :stage nil :ap i "receiver" r :do 
-    (update-push-aclosure ac :stage "return value")
-    (match :v (and (is-instance r "identifier") (aget a "type" r)) T 
-        :do (aget a "method value" r (aget i "name"))
-        :exit (clear-update-eval-aclosure ac :instance (aget i "receiver")))))
+(aspect "opsem::rvalue" :context ac :type "selector expr" :instance i 
+  :stage nil :ap i "receiver" r :do 
+  
+  (update-push-acontext ac :stage "return value")
+  (match :v (and (is-instance r "identifier") (aget a "type" r)) T 
+  :do   (aget a "method value" r (aget i "name"))
+  :exit (clear-update-eval-acontext ac :instance (aget i "receiver"))))
 \end{ABMLCode}
 
-Для получения левого значения (только для структур).
+Иначе слева стоит структура, или указатель на нее, который сначала нужно разыменовать.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::lvalue" :type "selector expr" 
-    :instance i :stage nil :do 
-    (update-push-aclosure ac :stage "return value")
-    (clear-update-eval-aclosure ac :instance (aget i "receiver") 
-        :attribute "opsem::rvalue"))
-(aclosure ac :attribute "opsem::lvalue" :type "selector expr" 
-    :instance i :stage "return value" 
-    :value r :ap i "name" n :ap r "type" tr :do 
-    (nmatch :v tr "struct type"  :exit (aget r "fields" n)
-            :v tr "pointer type" :exit (aget r "target" "value" "fields" n)))
+(aspect "opsem::rvalue" :context ac :type "selector expr" :instance i 
+  :stage "return value" :value r :ap r "type" tr :ap i "name" n :do 
+  
+  (nmatch 
+  :v tr "struct type"  :exit (aget r "fields" n "value") 
+  :v tr "pointer type" :exit (aget r "target" "value" "fields" n "value")))
 \end{ABMLCode}
 
 \subsubsection{Индексирование}
-Индексирование применимо к массивам, срезам, картам и строкам.
+Сначала вычисляем хранилище, к которому применимо индексирование: массив, срез, карта или строка.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "index expr" 
-    :instance i :stage nil :do 
-    (update-push-aclosure ac :stage "eval index")
-    (clear-update-eval-aclosure ac :instance (aget i "indexable")))
+(aspect "opsem::rvalue" :context ac :type "index expr" :instance i 
+  :stage nil :do 
+  
+  (update-push-acontext ac :stage "eval index")
+  (clear-update-eval-acontext ac :instance (aget i "indexable")))
 \end{ABMLCode}
 
-Возврат значения по индексу.
+На стадии \ABMLString{eval index} вычисляем индекс, по которому хотим обратиться к хранилищу.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "index expr" 
-    :instance i :stage "return value" 
-    :value index :ap ac "indexable" indl :ap indl "type" it :do 
-    (nmatch :v it "array type"  :exit (aget (nth index (aget indl "elements")) 
-                                          "value")
-            :v it "slice type"  :exit (aget (nth (+ (aget indl "offset") index) 
-                    (aget indl "array" "elements")) "value")
-            :v it "map type"    :exit (aget (aget indl "entries" index) "value")
-            :v it "string type" :exit (char (aget indl "value") index)))
+(aspect "opsem::rvalue" :context ac :type "index expr" :instance i 
+  :stage "eval index" :value indl :do 
+  
+  (update-push-acontext ac :stage "return value" :av "indexable" indl)
+  (clear-update-eval-acontext ac :instance (aget i "index")))
 \end{ABMLCode}
+
+На стадии \ABMLString{return value} возвращается искомое значение, доступ к которому получается в зависимости от типа хранилища.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "index expr" 
+  :stage "return value" :value index :ap ac "indexable" indl 
+  :ap indl "type" it :do 
+  
+  (nmatch 
+  :v it "array type"  
+  :exit (aget (nth index (aget indl "elements")) "value")
+  :v it "slice type"  
+  :exit (aget (nth (+ (aget indl "offset") index) 
+                   (aget indl "array" "elements")) "value")
+  :v it "map type"    
+  :exit (aget (aget indl "entries" index) "value")
+  :v it "string type" 
+  :exit (char (aget indl "value") index)))
+\end{ABMLCode}
+
+Вычисления этого выражения в lvalue позиции происходит аналогичным образом, за исключением того, что к строке индексирование применяться не может.
+
+\begin{ABMLCode}
+(aspect "opsem::lvalue" :context ac :type "indexable expr" :instance i 
+  :stage nil :do 
+  
+  (update-push-acontext ac :stage "eval index")
+  (clear-update-eval-acontext ac :instance (aget i "indexable") 
+    :aspect "opsem::rvalue"))
+(aspect "opsem::lvalue" :context ac :type "index expr" :instance i 
+  :stage "eval index" :value indl :do 
+  
+  (update-push-acontext ac :stage "return value" :av "indexable" indl)
+  (clear-update-eval-acontext ac :instance (aget i "index") 
+    :aspect "opsem::rvalue"))
+(aspect "opsem::lvalue" :context ac :type "index expr" 
+  :stage "return value" :value index :ap ac "indexable" indl 
+  :ap indl "type" it :do 
+  
+  (nmatch 
+  :v it "array type" :exit (nth index (aget indl "elements")) 
+  :v it "slice type" 
+  :exit (nth (+ offset index) (aget indl "array" "elements"))
+  :v it "map type"   :exit (aget indl "entries" index)))
+\end{ABMLCode}
+
 
 \subsubsection{Выражение среза}
 Выражение среза создает новый срез из существующего массива, среза или строки.
 
-\begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "slice expr" 
-    :instance i :stage nil :do 
-    (update-push-aclosure ac :stage "eval low")
-    (clear-update-eval-aclosure ac :instance (aget i "sequence")))
-\end{ABMLCode}
-
-Для массива:
+Сначала вычисляем все атрибуты: \ABMLString{sequence}, \ABMLString{low}, \ABMLString{high}, \ABMLString{max}.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "slice expr" 
-    :instance i :stage "array type" 
-    :ap ac "sequence" s :ap ac "low" low :ap ac "high" high :ap ac "cap" cap
-    :ap s "type" st :p (length (aget s "elements")) len :do 
-    (if (not high) (aset high len))
-    (if (not cap) (aset cap (- len low)))
-    (mo "slice value" 
-        :av "type" (mo "slice type" :av "elem type" (aget st "elem type")) 
-        :av "array" s 
-        :av "offset" low 
-        :av "length" (- high low)
-        :av "capacity" cap))
+(aspect "opsem::rvalue" :context ac :type "slice expr" :instance i 
+  :stage nil :do 
+  
+  (update-push-acontext ac :stage "eval low")
+  (clear-update-eval-acontext ac :instance (aget i "sequence")))
+
+(aspect "opsem::rvalue" :context ac :type "slice expr" :instance i 
+  :stage "eval low" :value s :do 
+  
+  (update-push-acontext ac :stage "eval high" :av "sequence" s)
+  (clear-update-eval-acontext ac :instance (aget i "low")))
+
+(aspect "opsem::rvalue" :context ac :type "slice expr" :instance i 
+  :stage "eval high" :ap ac "sequence" s :value low :do
+  
+  (update-push-acontext ac :stage "eval max" :av "sequence" s 
+                           :av "low" (if low low 0))
+  (clear-update-eval-acontext ac :instance (aget i "high")))
+
+(aspect "opsem::rvalue" :context ac :type "slice expr" :instance i 
+  :stage "eval max" :ap ac "sequence" s :ap ac "low" low :value high :do 
+  
+  (update-push-acontext ac :stage "build value" :av "sequence" s 
+                           :av "low" low :av "high" high)
+  (clear-update-eval-acontext ac :instance (aget i "max")))
 \end{ABMLCode}
 
-Для среза (сохраняется ссылка на исходный массив):
+На стадии \ABMLString{build value} определяем тип хранилища.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "slice expr" 
-    :instance i :stage "slice type" 
-    :ap ac "sequence" s :ap ac "low" low :ap ac "high" high :ap ac "cap" cap 
-    :p (length (aget s "array" "type" "len")) len :do 
-    (if (not high) (aset high len))
-    (if (not cap) (aset cap (- len low)))
-    (mo "slice value" 
-        :av "type" (aget s "type")
-        :av "array" (aget s "array")
-        :av "offset" (+ (aget s "offset") low)
-        :av "length" (aget s "length")
-        :av "capacity" (aget s "capacity")))
+(aspect "opsem::rvalue" :context ac :type "slice expr" 
+  :stage "build value" :ap ac "sequence" s :ap ac "low" low 
+  :ap ac "high" high :value cap :ap s "type" st :do 
+  
+  (clear-update-eval-acontext ac :stage (otype st) :av "sequence" s 
+    :av "low" low :av "high" high :av "cap" cap))
 \end{ABMLCode}
 
-Для строки возвращается подстрока (неизменяемая).
+На стадии \ABMLString{array type} описывается взятие среза по массиву.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "slice expr" 
-    :instance i :stage "string type" 
-    :p (aget ac "sequence" "value") s :ap ac "low" low :ap ac "high" high :do 
-    (if (not high) (aset high (length s)))
-    (subseq s low high))
+(aspect "opsem::rvalue" :context ac :type "slice expr" 
+  :stage "array type" :ap ac "sequence" s :ap ac "low" low 
+  :ap ac "high" :ap ac "cap" cap :ap s "type" st 
+  :p (length (aget s "elements")) len :do 
+  
+  (if (not high) (aset high len))
+  (if (not cap) (aset cap (- len low)))
+  (mo "slice value" 
+    :av "type" (mo "slice type" :av "elem type" (aget st "elem type")) 
+    :av "array" s 
+    :av "offset" low 
+    :av "length" high - low 
+    :av "capacity" cap)
 \end{ABMLCode}
 
-\subsection{Унарные выражения}
+На стадии \ABMLString{pointer type} описывается взятие среза по указателю на массив.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "slice expr" 
+  :stage "pointer type" :ap ac "sequence" s :ap ac "low" low 
+  :ap ac "high" high :ap ac "cap" cap :do 
+  
+  (clear-update-eval-acontext ac :stage "array type" 
+                                 :av "sequence" (aget s "value")))
+\end{ABMLCode}
+
+На стадии \ABMLString{array type} описывается взятие среза по срезу.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "slice expr" 
+  :stage "slice type" :ap ac "sequence" s :ap ac "low" low 
+  :ap ac "high" high :ap ac "cap" cap 
+  :p (length (aget s "array" "type" "len")) len :do 
+  
+  (if (not high) (aset high len))
+  (if (not cap) (aset cap (- len low)))
+  (mo "slice value" 
+    :av "type" (aget s "type")
+    :av "array" (aget s "array")
+    :av "offset" (+ (aget s "offset") low)
+    :av "length" (aget s "length")
+    :av "capacity" (aget s "capacity")))
+\end{ABMLCode}
+
+На стадии \ABMLString{array type} описывается взятие среза по строке.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "slice expr" 
+  :stage "string type" :p (aget ac "sequence" "value") s 
+  :ap ac "low" low :ap ac "high" high :do 
+  
+  (if (not high) (aset high (length s)))
+  (subseq s low high))
+\end{ABMLCode}
+
+\subsubsection{Вызов функции}
+Вычисление этого выражения начинается с вычисления самой функции. Например, это может быть имя или литерал функции.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "function call" :instance i 
+  :stage nil :do 
+  
+  (update-push-acontext ac :stage "eval arguments")
+  (clear-update-eval-acontext ac :instance (aget i "function")))
+\end{ABMLCode}
+
+Затем вычисляются аргументы функции.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "function call" :instance i 
+  :stage "eval arguments" :value f :ap i "arguments" as :do 
+  
+  (update-push-acontext ac :stage "copy parameters" :av "function" f)
+  (match :v (null as) T :do nil 
+  :exit (update-push-acontext ac :stage "evaluating" :av "arguments" nil 
+                                 :av "left" (cdr as))
+        (clear-update-eval-acontext ac :instance (car as))))
+\end{ABMLCode}
+
+Непосредственно вычисление параметров функции.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "function call" 
+  :stage "evaluating" :ap ac "arguments" as :ap ac "left" left 
+  :value v :p (cons v as) nas :do 
+  
+  (match :v (null left) T :do (reverse nas) 
+  :exit (update-push-acontext ac :av "arguments" (cdr as) 
+                                 :av "left" (cdr left))
+        (clear-update-eval-acontext ac :instance (car as))))
+\end{ABMLCode}
+
+Затем создаются копии значений всех параметров, с которыми и будет происходить работа в теле функции.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "function call" 
+  :stage "copy parameters" :ap ac "function" f :ap f "signature" sgn 
+  :ap sgn "result" r :value as :agent a :p nil dcs :do 
+  
+  (let ((args as)) (dolist (p (aget sgn "parameters")) 
+    (setf dcs (cons (aget a "variable cell" (aget p "name")) dcs))
+    
+    (aset a "variable cell" (aget p "name") (mo "cell" :av "type" (aget p "type") :av "value" (car args)))
+    (setf args (cdr args))))
+  (update-push-acontext ac :stage "copy closure" :av "function" f)
+  (match :v (null r) nil :v (is-instance (car r) "param decl") T 
+  :do (update-push-acontext ac :stage "copying result" :av "left" r 
+                               :av "done" dcs)
+      (clear-update-eval-acontext ac :instance (aget (car r) "type") 
+                                     :aspect "default value by type")
+  :exit dcs))
+\end{ABMLCode}
+
+Непосредственно вычисление копий значений параметров функции.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "function call" 
+  :stage "copying result" :ap ac "left" l :ap ac "done" done :value v 
+  :agent a :ap (car l) "name" n 
+  :p (cons (aget a "variable cell" n) done) nd :do 
+  
+  (aset a "variable cell" n (mo "cell" :av "type" (aget (car l) "type") :av "value" v))
+  (match :v (null l) T :do nd 
+  :exit 
+  (update-push-acontext ac :av "left" (cdr "left") :av "done" nd)
+  (clear-update-eval-acontext ac :instance (aget (car l) "type") 
+                                 :aspect "default value by type")))
+\end{ABMLCode}
+
+Затем необходимо так же скопировать контекст функции, что бы иметь возможность обращаться к переменным, объявленным вне функции, но в области ее видимости.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "function call" 
+  :stage "copy closure" :ap ac "function" f :value dcs 
+  :ap f "closure" cl :agent a :do 
+  
+  (dolist (n (attributes cl)) (setf dcs (cons (aget cl n) dcs)) 
+      (setf a "variable cell" n 
+        (mo "cell" :av "type" (aget cl n "type") 
+                   :av "value" (aget cl n "value"))))
+  (update-push-acontext ac :stage "variable back" :av "function" f 
+                           :av "cells" (reverse dcs))
+  (clear-update-eval-acontext ac :instance (aget f "body")))
+\end{ABMLCode}
+
+Наконец, после вызова функции, происходит возврат значений всех возможно затененных переменных к прежним значениям.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "function call" 
+  :stage "variable back" :ap ac "function" f :ap ac "cells" cs 
+  :ap f "signature" sgn :ap sgn "result" r :ap f "closure" cl 
+  :value v :do 
+  
+  (dolist (p (aget sgn "parameters")) (aset a "variable cell" 
+    (aget p "name") (car cs)) (setf cs (cdr cs)))
+  (match :v (null r) nil :v (is-instance (car r) "param decl") T 
+  :do (dolist (p r) (aset a "variable cell" (aget p "name") (car cs)) 
+              (setf cs (cdr cs)))
+  )
+  (dolist (n (attributes cl)) (setf a "variable cell" n (car cs)) 
+          (setf cs (cdr cs)))
+  (car v))
+\end{ABMLCode}
+
+\subsubsection{Вызов метода}
+Вызов метода очень похож на вызов функции. Поэтому будем сводить этот случай к предыдущему.
+
+Сначала вычисляем получателя метода.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "method call" :instance i 
+  :stage nil :do 
+  
+  (update-push-acontext ac :stage "to function")
+  (clear-update-eval-acontext ac :instance (aget i "receiver")))
+\end{ABMLCode}
+
+Затем, используем ранее определенное выражение преобразования метода в функцию.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "method call" :instance i 
+  :stage "to function" :value rec :do 
+  
+  (update-push-acontext ac :stage "eval call")
+  (clear-update-eval-acontext ac :instance (mo "method expr" 
+    :av "receiver type" (aget rec "type") :av "name" (aget i "method"))))
+\end{ABMLCode}
+
+Наконец, имея функцию, выполняем вызов функции, что описано в предыдущей секции.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "method call" :instance i 
+  :stage "eval call" :value f :do 
+  
+  (clear-update-eval-acontext ac :instance (mo "function call" 
+    :av "function" f :av "arguments" (aget i "arguments"))))
+\end{ABMLCode}
+
+
+
+\subsubsection{Унарные выражения}
 Все унарные выражения сначала вычисляют свой операнд, затем применяют операцию.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "unary expression" :instance i :stage nil :do 
-    (update-push-aclosure ac :stage "apply")
-    (clear-update-eval-aclosure ac :instance (aget i 1)))
+(aspect "opsem::rvalue" :context ac :type "unary expression" :instance i 
+  :stage nil :do 
+  
+  (update-push-acontext ac :stage "apply")
+  (clear-update-eval-acontext ac :instance (aget i 1)))
 \end{ABMLCode}
 
-Вспомогательная функция для приведения целых чисел к нужному типу с учетом 
-переполнения (wrap-around для беззнаковых, знаковое представление для знаковых).
+Вспомогательная функция для приведения целых чисел к нужному типу с учетом переполнения (wrap-around для беззнаковых, знаковое представление для знаковых).
 
 \begin{ABMLCode}
 (defun convert-int-to-type (tp raw)
-    (mo "typed primitive" :av "type" tp :av "value" 
-        (if (not (is-instance tp "int type")) raw
-            (let* ((bs (aget tp "bit size")) 
-                   (v (mod raw (ash 1 bs))))
-                (if (or (is-instance tp "unsigned int type") 
-                        (< v (ash 1 (1- bs)))) 
-                    v 
-                    (- v (ash 1 (1- bs))))))))
+  (mo "typed primitive" :av "type" tp :av "value" 
+    (if (not (is-instance tp "int type")) raw
+      (let* ((bs (aget tp "bit size")) (v (mod raw (ash 1 bs))))
+        (if (or (is-instance tp "unsigned int type") 
+                (< v (ash 1 (1- bs)))) 
+            v 
+            (- v (ash 1 (1- bs))))))))
 \end{ABMLCode}
 
-Унарные операторы:
+Унарный плюс.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "+1" :stage "apply" :value v :do v)
-(aclosure ac :attribute "opsem::rvalue" :type "-1" :stage "apply" :value pr 
-    :ap pr "value" v :ap pr "type" tp :do (convert-int-to-type tp (- v)))
-(aclosure ac :attribute "opsem::rvalue" :type "^1" :stage "apply" :value pr 
-    :ap pr "value" v :ap pr "type" tp :do (convert-int-to-type tp (lognot v)))
-(aclosure ac :attribute "opsem::rvalue" :type "!1" :stage "apply" :value v :do 
-    (mo "typed primitive" :av "type" (co "bool type") 
-        :av "value" (not (aget v "value"))))
+(aspect "opsem::rvalue" :context ac :type "+1" :stage "apply" 
+  :value v :do v)
 \end{ABMLCode}
 
-Разыменование указателя (может быть как rvalue, так и lvalue).
+Унарный минус.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "*1" :stage "apply" 
-    :value tv :ap tv "value" v :do 
-    (mo "typed primitive" :av "type" (aget tv "type") 
-        :av "value" (aget v "value")))
-(aclosure ac :attribute "opsem::lvalue" :type "*1" :instance i :stage nil :do 
-    (update-push-aclosure ac :stage "apply")
-    (clear-update-eval-aclosure ac :instance (aget i 1)))
-(aclosure ac :attribute "opsem::lvalue" :type "*1" :stage "apply" :value v :do (aget v "value"))
+(aspect "opsem::rvalue" :context ac :type "-1" :stage "apply" 
+  :value pr :ap pr "value" v :ap pr "type" tp 
+  :do (convert-int-to-type tp (- v)))
+\end{ABMLCode}
+
+Побитовое отрицание.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "^1" :stage "apply" 
+  :value pr :ap pr "value" v :ap pr "type" tp 
+  :do (convert-int-to-type tp (lognot v))
+)
+\end{ABMLCode}
+
+Логическое отрицание.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "!1" :stage "apply" 
+  :value v :do 
+  (mo "typed primitive" :av "type" (aget v "type") 
+                        :av "value" (not (aget v "value"))))
+\end{ABMLCode}
+
+Разыменование указателя (может быть как rvalue, так и lvalue). Применимо только к ячейкам памяти \ABMLString{cell}
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "*1" :stage "apply" 
+  :value tv :ap tv "value" v :do 
+  (mo "typed primitive" :av "type" (aget tv "type") 
+                        :av "value" (aget v "value")))
+
+(aspect "opsem::lvalue" :context ac :type "*1" :instance i :stage nil 
+:do (update-push-acontext ac :stage "apply")
+    (clear-update-eval-acontext ac :instance (aget i 1)))
+
+(aspect "opsem::lvalue" :context ac :type "*1" :stage "apply" 
+  :value v :do (aget v "value"))
 \end{ABMLCode}
 
 Взятие адреса.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "&1" :instance i :stage "apply" 
-    :value tv :ap tv "type" tp :ap tv "value" v :do 
-    (mo "typed primitive" :av "type" (co "pointer type" :av "type" tp) 
-        :av "value" (mo "cell" :av "value" v :av "type" tp)))
+(aspect "opsem::rvalue" :context ac :type "&1" :instance i 
+  :stage "apply" :value tv :ap tv "type" tp :ap tv "value" v :do 
+  
+  (mo "typed primitive" :av "type" (co "pointer type" :av "type" tp) 
+    :av "value" (mo "cell" :av "value" v :av "type" tp)))
 \end{ABMLCode}
 
-\subsection{Бинарные выражения}
-Бинарные выражения вычисляют левый операнд, затем правый (кроме логических 
-операций с коротким замыканием).
+\subsubsection{Бинарные выражения}
+Бинарные выражения вычисляют левый операнд, затем правый (кроме логических  операций с коротким замыканием). Допускаются только бинарные выражения с операндами одного типа.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "binary expression" :instance i :stage nil :do 
-    (update-push-aclosure ac :stage "apply 1")
-    (clear-update-eval-aclosure ac :instance (aget i 1)))
+(aspect "opsem::rvalue" :context ac :type "binary expression" :instance i 
+  :stage nil :do 
+  
+  (update-push-acontext ac :stage "apply 1")
+  (clear-update-eval-acontext ac :instance (aget i 1)))
 \end{ABMLCode}
 
-Логические операции с коротким замыканием.
+Логические И/ИЛИ не вычисляют второй операнд, если его значение уже не может повлиять на результат выражения.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "1||2" :instance i :stage "apply 1" :value v :do 
-    (match :v (aget v "value") T 
-        :do (mo "typed primitive" :av "type" (co "bool type") :av "value" T) 
-        :exit (update-push-aclosure ac :stage "apply 2")
-              (clear-update-eval-aclosure ac :instance (aget i 2))))
-(aclosure ac :attribute "opsem::rvalue" :type "1&&2" :instance i :stage "apply 1" :value v :do 
-    (match :v (aget v "value") nil 
-        :do (mo "typed primitive" :av "type" (co "bool type") :av "value" nil) 
-        :exit (update-push-aclosure ac :stage "apply 2")
-              (clear-update-eval-aclosure ac :instance (aget i 2))))
+(aspect "opsem::rvalue" :context ac :type "1&&2" :instance i 
+  :stage "apply 1" :value v :do 
+  (match :v (aget v "value") nil 
+  :do (mo "typed primitive" :av "type" (co "bool type") :av "value" nil) 
+  :exit (update-push-acontext ac :stage "apply 2")
+        (clear-update-eval-acontext ac :instance (aget i 2))))
+
+(aspect "opsem::rvalue" :context ac :type "1&&2" 
+  :stage "apply 2" :value v :do  
+  (mo "typed primitive" :av "type" (co "bool type") 
+                        :av "value" (aget v "value")))
+
+(aspect "opsem::rvalue" :context ac :type "1||2" :instance i 
+  :stage "apply 1" :value v :do 
+  
+  (match :v (aget v "value") T 
+  :do (mo "typed primitive" :av "type" (co "bool type") :av "value" T) 
+  :exit (update-push-acontext ac :stage "apply 2")
+        (clear-update-eval-acontext ac :instance (aget i 2))))
+
+(aspect "opsem::rvalue" :context ac :type "1||2" 
+  :stage "apply 2" :value v :do   
+  (mo "typed primitive" :av "type" (co "bool type") 
+                        :av "value" (aget v "value")))
 \end{ABMLCode}
 
-Арифметические и битовые операции. Результат приводится к типу левого операнда.
+Арифметическое сложение чисел.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "1+2" :instance i :stage "apply 1" :value v :do 
-    (update-push-aclosure ac :stage "apply 2" :av 1 v)
-    (clear-update-eval-aclosure ac :instance (aget i 2)))
-(aclosure ac :attribute "opsem::rvalue" :type "1+2" :stage "apply 2" 
-    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s :ap s "value" sv :do 
-    (convert-int-to-type tp (+ fv sv)))
+(aspect "opsem::rvalue" :context ac :type "1+2" :instance i 
+  :stage "apply 1" :value v :do 
+  (update-push-acontext ac :stage "apply 2" :av 1 v)
+  (clear-update-eval-acontext ac :instance (aget i 2)))
+
+(aspect "opsem::rvalue" :context ac :type "1+2" :stage "apply 2" 
+  :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s 
+  :ap s "value" sv :do 
+  (convert-int-to-type tp (+ fv sv)))
 \end{ABMLCode}
 
+Арифметическое вычитание двух чисел.
+
 \begin{ABMLCode}
-;; subtraction
-(aclosure ac :attribute "opsem::rvalue" :type "1-2" :instance i :stage "apply 1" :value v :do 
-    (update-push-aclosure ac :stage "apply 2" :av 1 v)
-    (clear-update-eval-aclosure ac :instance (aget i 2)))
-(aclosure ac :attribute "opsem::rvalue" :type "1-2" :stage "apply 2" 
-    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s :ap s "value" sv :do 
-    (convert-int-to-type tp (- fv sv)))
+(aspect "opsem::rvalue" :context ac :type "1-2" :instance i 
+  :stage "apply 1" :value v :do 
+  (update-push-acontext ac :stage "apply 2" :av 1 v)
+  (clear-update-eval-acontext ac :instance (aget i 2)))
 
-;; multiplication
-(aclosure ac :attribute "opsem::rvalue" :type "1*2" :instance i :stage "apply 1" :value v :do 
-    (update-push-aclosure ac :stage "apply 2" :av 1 v)
-    (clear-update-eval-aclosure ac :instance (aget i 2)))
-(aclosure ac :attribute "opsem::rvalue" :type "1*2" :stage "apply 2" 
-    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s :ap s "value" sv :do 
-    (convert-int-to-type tp (* fv sv)))
+(aspect "opsem::rvalue" :context ac :type "1-2" :stage "apply 2" 
+  :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s 
+  :ap s "value" sv :do 
+  (convert-int-to-type tp (- fv sv)))
+\end{ABMLCode}
 
-;; division
-(aclosure ac :attribute "opsem::rvalue" :type "1/2" :instance i :stage "apply 1" :value v :do 
-    (update-push-aclosure ac :stage "apply 2" :av 1 v)
-    (clear-update-eval-aclosure ac :instance (aget i 2)))
-(aclosure ac :attribute "opsem::rvalue" :type "1/2" :stage "apply 2" 
-    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s :ap s "value" sv :do 
+Арифметическое умножение двух чисел.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "1*2" :instance i 
+  :stage "apply 1" :value v :do 
+  (update-push-acontext ac :stage "apply 2" :av 1 v)
+  (clear-update-eval-acontext ac :instance (aget i 2)))
+
+(aspect "opsem::rvalue" :context ac :type "1*2" :stage "apply 2" 
+  :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s 
+  :ap s "value" sv :do 
+  (convert-int-to-type tp (* fv sv)))
+\end{ABMLCode}
+
+Арифметическое деление двух чисел. При условии корректно написанной программы предполагается невозможность второго операнда быть нулем.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "1/2" :instance i 
+  :stage "apply 1" :value v :do 
+  (update-push-acontext ac :stage "apply 2" :av 1 v)
+  (clear-update-eval-acontext ac :instance (aget i 2)))
+
+(aspect "opsem::rvalue" :context ac :type "1/2" :stage "apply 2" 
+    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s 
+    :ap s "value" sv :do 
     (convert-int-to-type tp (/ fv sv)))
-
-;; remainder
-(aclosure ac :attribute "opsem::rvalue" :type "1%2" :instance i :stage "apply 1" :value v :do 
-    (update-push-aclosure ac :stage "apply 2" :av 1 v)
-    (clear-update-eval-aclosure ac :instance (aget i 2)))
-(aclosure ac :attribute "opsem::rvalue" :type "1%2" :stage "apply 2" 
-    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s :ap s "value" sv :do 
-    (convert-int-to-type tp (rem fv sv)))
-
-;; left shift
-(aclosure ac :attribute "opsem::rvalue" :type "1<<2" :instance i :stage "apply 1" :value v :do 
-    (update-push-aclosure ac :stage "apply 2" :av 1 v)
-    (clear-update-eval-aclosure ac :instance (aget i 2)))
-(aclosure ac :attribute "opsem::rvalue" :type "1<<2" :stage "apply 2" 
-    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s :ap s "value" sv :do 
-    (convert-int-to-type tp (ash fv sv)))
-
-;; right shift
-(aclosure ac :attribute "opsem::rvalue" :type "1>>2" :instance i :stage "apply 1" :value v :do 
-    (update-push-aclosure ac :stage "apply 2" :av 1 v)
-    (clear-update-eval-aclosure ac :instance (aget i 2)))
-(aclosure ac :attribute "opsem::rvalue" :type "1>>2" :stage "apply 2" 
-    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s :ap s "value" sv :do 
-    (convert-int-to-type tp (ash fv (- sv))))
-
-;; bitwise AND
-(aclosure ac :attribute "opsem::rvalue" :type "1&2" :instance i :stage "apply 1" :value v :do 
-    (update-push-aclosure ac :stage "apply 2" :av 1 v)
-    (clear-update-eval-aclosure ac :instance (aget i 2)))
-(aclosure ac :attribute "opsem::rvalue" :type "1&2" :stage "apply 2" 
-    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s :ap s "value" sv :do 
-    (convert-int-to-type tp (logand fv sv)))
-
-;; bitwise AND NOT
-(aclosure ac :attribute "opsem::rvalue" :type "1&^2" :instance i :stage "apply 1" :value v :do 
-    (update-push-aclosure ac :stage "apply 2" :av 1 v)
-    (clear-update-eval-aclosure ac :instance (aget i 2)))
-(aclosure ac :attribute "opsem::rvalue" :type "1&^2" :stage "apply 2" 
-    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s :ap s "value" sv :do 
-    (convert-int-to-type tp (logand fv (lognot sv))))
-
-;; bitwise OR
-(aclosure ac :attribute "opsem::rvalue" :type "1|2" :instance i :stage "apply 1" :value v :do 
-    (update-push-aclosure ac :stage "apply 2" :av 1 v)
-    (clear-update-eval-aclosure ac :instance (aget i 2)))
-(aclosure ac :attribute "opsem::rvalue" :type "1|2" :stage "apply 2" 
-    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s :ap s "value" sv :do 
-    (convert-int-to-type tp (logior fv sv)))
-
-;; bitwise XOR
-(aclosure ac :attribute "opsem::rvalue" :type "1^2" :instance i :stage "apply 1" :value v :do 
-    (update-push-aclosure ac :stage "apply 2" :av 1 v)
-    (clear-update-eval-aclosure ac :instance (aget i 2)))
-(aclosure ac :attribute "opsem::rvalue" :type "1^2" :stage "apply 2" 
-    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s :ap s "value" sv :do 
-    (convert-int-to-type tp (logxor fv sv)))
 \end{ABMLCode}
 
-Операции сравнения возвращают типизированное булево значение.
+Взятие остатка по модулю.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "1==2" :instance i :stage "apply 1" :value v :do 
-    (update-push-aclosure ac :stage "apply 2" :av 1 v)
-    (clear-update-eval-aclosure ac :instance (aget i 2)))
-(aclosure ac :attribute "opsem::rvalue" :type "1==2" :stage "apply 2" 
-    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s :ap s "value" sv :do 
+(aspect "opsem::rvalue" :context ac :type "1%2" :instance i 
+  :stage "apply 1" :value v :do 
+  (update-push-acontext ac :stage "apply 2" :av 1 v)
+  (clear-update-eval-acontext ac :instance (aget i 2)))
+
+(aspect "opsem::rvalue" :context ac :type "1%2" :stage "apply 2" 
+  :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s 
+  :ap s "value" sv :do 
+  (convert-int-to-type tp (rem fv sv)))
+\end{ABMLCode}
+
+Побитовый сдвиг влево.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "1<<2" :instance i 
+  :stage "apply 1" :value v :do 
+  (update-push-acontext ac :stage "apply 2" :av 1 v)
+  (clear-update-eval-acontext ac :instance (aget i 2)))
+  
+(aspect "opsem::rvalue" :context ac :type "1<<2" :stage "apply 2" 
+  :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s 
+  :ap s "value" sv :do 
+  (convert-int-to-type tp (ash fv sv)))
+\end{ABMLCode}
+
+Побитовый сдвиг вправо.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "1>>2" :instance i 
+  :stage "apply 1" :value v :do 
+  (update-push-acontext ac :stage "apply 2" :av 1 v)
+  (clear-update-eval-acontext ac :instance (aget i 2)))
+
+(aspect "opsem::rvalue" :context ac :type "1>>2" :stage "apply 2" 
+  :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s 
+  :ap s "value" sv :do 
+  (convert-int-to-type tp (ash fv (- sv))))
+\end{ABMLCode}
+
+Побитовое И.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "1&2" :instance i 
+  :stage "apply 1" :value v :do 
+  (update-push-acontext ac :stage "apply 2" :av 1 v)
+  (clear-update-eval-acontext ac :instance (aget i 2)))
+
+(aspect "opsem::rvalue" :context ac :type "1&2" :stage "apply 2" 
+  :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s 
+  :ap s "value" sv :do 
+  (convert-int-to-type tp (logand fv sv)))
+\end{ABMLCode}
+
+Побитовое И-НЕТ представляет собой применение операции побитового И к первому операнду и результату применения побитового НЕТ ко второму операнду.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "1&^2" :instance i 
+  :stage "apply 1" :value v :do 
+  (update-push-acontext ac :stage "apply 2" :av 1 v)
+  (clear-update-eval-acontext ac :instance (aget i 2)))
+    
+(aspect "opsem::rvalue" :context ac :type "1&^2" :stage "apply 2" 
+  :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s 
+  :ap s "value" sv :do 
+  (convert-int-to-type tp (logand fv (lognot sv))))
+\end{ABMLCode}
+
+Побитовое ИЛИ.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "1|2" :instance i 
+  :stage "apply 1" :value v :do 
+  (update-push-acontext ac :stage "apply 2" :av 1 v)
+  (clear-update-eval-acontext ac :instance (aget i 2)))
+  
+(aspect "opsem::rvalue" :context ac :type "1|2" :stage "apply 2" 
+  :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s 
+  :ap s "value" sv :do 
+  (convert-int-to-type tp (logior fv sv)))
+\end{ABMLCode}
+
+Исключающее ИЛИ.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "1^2" :instance i 
+  :stage "apply 1" :value v :do 
+  (update-push-acontext ac :stage "apply 2" :av 1 v)
+  (clear-update-eval-acontext ac :instance (aget i 2)))
+
+(aspect "opsem::rvalue" :context ac :type "1^2" :stage "apply 2" 
+  :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s 
+  :ap s "value" sv :do 
+  (convert-int-to-type tp (logxor fv sv)))
+\end{ABMLCode}
+
+Далее будут описаны операции сравнения.
+
+Начнем с логической операции равенства.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "1==2" :instance i 
+  :stage "apply 1" :value v :do 
+  (update-push-acontext ac :stage "apply 2" :av 1 v)
+  (clear-update-eval-acontext ac :instance (aget i 2)))
+
+(aspect "opsem::rvalue" :context ac :type "1==2" :stage "apply 2" 
+    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s 
+    :ap s "value" sv :do 
     (convert-int-to-type tp (= fv sv)))
 \end{ABMLCode}
 
+Логическое неравенство.
+
 \begin{ABMLCode}
-;; inequality
-(aclosure ac :attribute "opsem::rvalue" :type "1!=2" :instance i :stage "apply 1" :value v :do 
-    (update-push-aclosure ac :stage "apply 2" :av 1 v)
-    (clear-update-eval-aclosure ac :instance (aget i 2)))
-(aclosure ac :attribute "opsem::rvalue" :type "1!=2" :stage "apply 2" 
-    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s :ap s "value" sv :do 
+(aspect "opsem::rvalue" :context ac :type "1!=2" :instance i 
+  :stage "apply 1" :value v :do 
+  (update-push-acontext ac :stage "apply 2" :av 1 v)
+  (clear-update-eval-acontext ac :instance (aget i 2)))
+
+(aspect "opsem::rvalue" :context ac :type "1!=2" :stage "apply 2" 
+    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s 
+    :ap s "value" sv :do 
     (convert-int-to-type tp (not (= fv sv))))
+\end{ABMLCode}
 
-;; less than
-(aclosure ac :attribute "opsem::rvalue" :type "1<2" :instance i :stage "apply 1" :value v :do 
-    (update-push-aclosure ac :stage "apply 2" :av 1 v)
-    (clear-update-eval-aclosure ac :instance (aget i 2)))
-(aclosure ac :attribute "opsem::rvalue" :type "1<2" :stage "apply 2" 
-    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s :ap s "value" sv :do 
+Логическое строго меньше.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "1<2" :instance i 
+  :stage "apply 1" :value v :do 
+  (update-push-acontext ac :stage "apply 2" :av 1 v)
+  (clear-update-eval-acontext ac :instance (aget i 2)))
+
+(aspect "opsem::rvalue" :context ac :type "1<2" :stage "apply 2" 
+    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s 
+    :ap s "value" sv :do 
     (convert-int-to-type tp (< fv sv)))
+\end{ABMLCode}
 
-;; less than or equal
-(aclosure ac :attribute "opsem::rvalue" :type "1<=2" :instance i :stage "apply 1" :value v :do 
-    (update-push-aclosure ac :stage "apply 2" :av 1 v)
-    (clear-update-eval-aclosure ac :instance (aget i 2)))
-(aclosure ac :attribute "opsem::rvalue" :type "1<=2" :stage "apply 2" 
-    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s :ap s "value" sv :do 
+Логическое нестрого меньше.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "1<=2" :instance i 
+  :stage "apply 1" :value v :do 
+  (update-push-acontext ac :stage "apply 2" :av 1 v)
+  (clear-update-eval-acontext ac :instance (aget i 2)))
+
+(aspect "opsem::rvalue" :context ac :type "1<=2" :stage "apply 2" 
+    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s 
+    :ap s "value" sv :do 
     (convert-int-to-type tp (<= fv sv)))
+\end{ABMLCode}
 
-;; greater than
-(aclosure ac :attribute "opsem::rvalue" :type "1>2" :instance i :stage "apply 1" :value v :do 
-    (update-push-aclosure ac :stage "apply 2" :av 1 v)
-    (clear-update-eval-aclosure ac :instance (aget i 2)))
-(aclosure ac :attribute "opsem::rvalue" :type "1>2" :stage "apply 2" 
-    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s :ap s "value" sv :do 
+Логическое строго больше.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "1>2" :instance i 
+  :stage "apply 1" :value v :do 
+  (update-push-acontext ac :stage "apply 2" :av 1 v)
+  (clear-update-eval-acontext ac :instance (aget i 2)))
+
+(aspect "opsem::rvalue" :context ac :type "1>2" :stage "apply 2" 
+    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s 
+    :ap s "value" sv :do 
     (convert-int-to-type tp (> fv sv)))
+\end{ABMLCode}
 
-;; greater than or equal
-(aclosure ac :attribute "opsem::rvalue" :type "1>=2" :instance i :stage "apply 1" :value v :do 
-    (update-push-aclosure ac :stage "apply 2" :av 1 v)
-    (clear-update-eval-aclosure ac :instance (aget i 2)))
-(aclosure ac :attribute "opsem::rvalue" :type "1>=2" :stage "apply 2" 
-    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s :ap s "value" sv :do 
+Логическое нестрого больше.
+
+\begin{ABMLCode}
+(aspect "opsem::rvalue" :context ac :type "1>=2" :instance i 
+  :stage "apply 1" :value v :do 
+  (update-push-acontext ac :stage "apply 2" :av 1 v)
+  (clear-update-eval-acontext ac :instance (aget i 2)))
+
+(aspect "opsem::rvalue" :context ac :type "1>=2" :stage "apply 2" 
+    :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s 
+    :ap s "value" sv :do 
     (convert-int-to-type tp (>= fv sv)))
 \end{ABMLCode}
 
+
+\subsubsection{Блоки}
+Блоки определяют области видимости переменных. При входе в блок сохраняются старые ячейки всех переменных, объявленных в этом блоке.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "block" :instance i :stage nil 
+  :ap i "statements" sts :ap i "decl variables" avs :p nil dv 
+  :agent a :do 
+  
+  (aset i "variable cells" (dolist 
+    (item avs (reverse dv)) 
+    (setf dv (cons (aget a "variable cell" item) dv))))
+  (update-push-acontext ac :stage "variable back")
+  (clear-update-eval-acontext ac :stage "evaluating statement" 
+                                 :av "left" sts))
+\end{ABMLCode}
+
+Вычисление очередного оператора блока.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "block" :instance i 
+  :stage "evaluating statement" :ap ac "left" left 
+  :v (null left) nil :ap i "statements" sts :do 
+  
+  (update-push-acontext ac :av "left" (cdr left))
+  (clear-update-eval-acontext ac :instance (car left) :av "block" i))
+\end{ABMLCode}
+
+Восстановление старых ячеек при выходе из блока.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "block" :instance i 
+  :stage "variable back" :do 
+  (dolist (item (aget i "decl variables")) 
+          (aset a "variable cell" item (aget item "variable cells"))))
+\end{ABMLCode}
+
+
+% =============================== Декларации ===============================
 \subsection{Декларации}
 
 \subsubsection{Декларация типа}
 Декларация типа добавляет определение типа в окружение агента.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem" :type "type decl" :instance i :agent a :do 
-    (aset a "type" (aget i "name") (aget i "type")))
+(aspect "opsem" :context ac :type "type decl" :instance i :agent a 
+:do (aset a "type" (aget i "name") (aget i "type")))
 \end{ABMLCode}
 
 \subsubsection{Декларация переменных}
-Декларация переменных может происходить двумя способами: с явным указанием значений 
-или без них (используются значения по умолчанию).
+Декларация переменных может происходить двумя способами: с явным указанием значений или без них (используются значения по умолчанию).
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem" :type "var decl" :instance i :stage nil 
-    :ap ac "block" b :ap i "names" ns :ap i "values" vs :ap i "types" ts :do 
-    (match :v (null vs) T 
-        :do (update-push-aclosure ac :stage "declarating defaults" 
-                 :av "names" ns :av "types" (cdr ts) :av "block" b)
-            (clear-update-eval-aclosure ac :attribute "default value by type" 
-                :instance (car ts))
-        :exit (update-push-aclosure ac :stage "evaluating values" 
-                  :av "names" ns :av "types" ts :av "values" (cdr vs) :av "block" b)
-              (clear-update-eval-aclosure ac :instance (car vs)))))
+(aspect "opsem" :context ac :type "var decl" :instance i 
+  :stage nil :ap ac "block" b :ap i "names" ns :ap i "values" vs 
+  :ap i "types" ts :do 
+  
+  (match :v (null vs) T 
+  :do 
+  (update-push-acontext ac :stage "declarating defaults" 
+    :av "names" ns :av "types" (cdr ts) :av "block" b)
+  (clear-update-eval-acontext ac :aspect "default value by type" 
+    :instance (car ts))
+  :exit 
+  (update-push-acontext ac :stage "evaluating values" :av "names" ns 
+    :av "types" ts :av "values" (cdr vs) :av "block" b)
+  (clear-update-eval-acontext ac :instance (car vs))))
 \end{ABMLCode}
+
+В случае декларации переменных без значения по умолчанию.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "var decl" :instance i 
+  :stage "declarating defaults" :ap ac "names" ns :ap ac "types" ts 
+  :ap ac "block" b :value v :agent a :do 
+  
+  (aset b "variable cells" (car ns) (aget a "variable cell" (car ns)))
+  (aset a "variable cell" (car ns) 
+    (mo "cell" :av "value" v 
+               :av "type" (co "pointer type" :av "type" (car ts))))
+  (match :v (null ts) nil :do 
+  (update-push-acontext ac :av "names" (cdr ns) :av "types" (cdr ts) 
+    :av "block" b)
+  (clear-update-eval-acontext ac :aspect "default value by type" 
+    :instance (car ts))))
+\end{ABMLCode}
+
+В случае декларации переменных с явно указанными значениями.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "var decl" :instance i 
+  :stage "evaluating values" :ap ac "names" ns :ap ac "values" vs 
+  :ap ac "types" ts :ap ac "block" b :value v :agent a :do 
+  
+  (aset b "variable cells" (car ns) (aget a "variable cell" (car ns)))
+  (aset a "variable cell" (car ns) (mo "cell" :av "value" v 
+    :av "type" (co "pointer type" :av "type" (car ts))))
+  (match :v (null vs) nil :do 
+  (update-push-acontext ac :av "names" (cdr ns) :av "types" (cdr ts) 
+    :av "values" (cdr vs) :av "block" b)
+  (clear-update-eval-acontext ac :instance (car vs))))
+\end{ABMLCode}
+
 
 \subsubsection{Декларация функций и методов}
-Декларация функции вычисляет значение функционального литерала и сохраняет его 
-в окружении.
+Декларация функции вычисляет значение собственно функции, а после сохраняет его в агенте.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem" :type "function decl" 
-    :instance i :stage nil :do 
-    (update-push-aclosure ac :stage "decl")
-    (clear-update-eval-aclosure ac :instance (aget i "value")))
-(aclosure ac :attribute "opsem" :type "function decl" 
-    :instance i :stage "decl" :value v :agent a :do 
-    (aset a "function value" (aget i "name") v))
+(aspect "opsem" :context ac :type "function decl" :instance i 
+  :stage nil :do 
+  (update-push-acontext ac :stage "decl")
+  (clear-update-eval-acontext ac :instance (aget i "value")))
+
+(aspect "opsem" :context ac :type "function decl" :instance i 
+  :stage "decl" :value v :agent a :do 
+  (aset a "function value" (aget i "name") v))
 \end{ABMLCode}
 
-\subsection{Блоки}
-Блоки определяют области видимости переменных. При входе в блок сохраняются 
-старые ячейки всех переменных, объявленных в этом блоке.
+Декларация метода происходит аналогичным образом.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem" :type "block" :instance i :stage nil 
-    :ap i "statements" sts :ap i "decl variables" avs :p nil dv :agent a :do 
-    (aset i "variable cells" (dolist (item avs (reverse dv)) 
-        (setf dv (cons (aget a "variable cell" item) dv))))
-    (update-push-aclosure ac :stage "variable back")
-    (clear-update-eval-aclosure ac :stage "evaluating statement" :av "statements" sts))
+(aspect "opsem" :context ac :type "method decl" :instance i 
+  :stage nil :do 
+  (update-push-acontext ac :stage "decl")
+  (clear-update-eval-acontext ac :instance (aget i "value")))
+    
+(aspect "opsem" :context ac :type "method decl" :instance i 
+  :stage "decl" :value v :agent a :do 
+  (aset a "method value" (aget i "value" "type" "receiver type") 
+    (aget i "name") v))
 \end{ABMLCode}
 
-Вычисление очередного оператора блока.
+
+% ============================== ОПЕРАТОРЫ ==============================
+\subsection{Операторы}
+Под оператором в данной терминологии понимается инструкция языка, не возвращающая после вычисления никакого значения.
+
+Стоит сразу отметить, что для упрощения операционной семантики все инициализирующие операторы до вычисления выносятся за строку до включающего оператора, вместе с которым образуют отдельный блок. 
+
+Для наглядности, сразу приведен пример такого преобразования. На вход подается следующий фрагмент кода:
+\begin{GoCode}
+for i := 0; i < 9; i++ { body(i) }
+\end{GoCode}
+
+Но до операционной семантики доходит уже код, получаемый из следующего фрагмента:
+\begin{GoCode}
+{
+  i := 0
+  for ; i < 9; i++ { body(i) }
+}
+\end{GoCode}
+
+Таким образом, поведение программы не меняется. Такой оператор может встречаться в условных операторах \GoKeyword{if}, циклах \GoKeyword{for}, операторах выбора \GoKeyword{switch}.
+
+\subsubsection{Метка}
+В вычисление помеченного оператора передается блок для корректной декларации переменных, и имя метки для операторов передачи управления.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem" :type "block" 
-    :instance i :stage "evaluating statement" 
-    :ap ac "statements" sts :v (null sts) nil :do 
-    (update-push-aclosure ac :av "statements" (cdr sts))
-    (clear-update-eval-aclosure ac :instance (car sts)))
+(aspect "opsem" :context ac :type "label" :instance i :do 
+  (clear-update-eval-acontext ac :instance (aget i "statement") 
+    :av "block" (aget ac "block") :av "label" (aget i "name")))
 \end{ABMLCode}
 
-Восстановление старых ячеек при выходе из блока.
+
+\subsubsection{Пустой оператор}
+Ничего не делает.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem" :type "block" 
-    :instance i :stage "variable back" :do 
-    (dolist (item (aget i "decl variables")) 
-        (aset a "variable cell" item (aget item "variable cells"))))
+(aspect "opsem" :context ac :type "empty stmt")
 \end{ABMLCode}
 
-\subsection{Операторы присваивания}
-Присваивание сначала вычисляет левую часть (lvalue), затем правую (rvalue).
+
+\subsubsection{Оператор инкремента}
+Увеличивает на 1 значение ячейки памяти, на которую действует.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem" :type "1=2" :instance i :stage nil :do 
-    (update-push-aclosure ac :stage "eval 2")
-    (clear-update-eval-aclosure ac :instance (aget i 2)))
-(aclosure ac :attribute "opsem" :type "1=2" :instance i :stage "eval 2" :value v :do 
-    (update-push-aclosure ac :stage "apply" :ac 1 v)
-    (clear-update-eval-aclosure ac :instance (aget i 1) :attribute "opsem::lvalue"))
-(aclosure ac :attribute "opsem" :type "1=2" :stage "apply" :ap ac 1 f :value s :do 
-    (aset f "value" (aget s "value")))
+(aspect "opsem" :context ac :type "1++ stmt" :instance i :stage nil 
+:do 
+  (update-push-acontext ac :stage "apply")
+  (clear-update-eval-acontext ac :aspect "opsem::lvalue" 
+                                 :instance (aget i 1)))
+
+(aspect "opsem" :context ac :type "1++ stmt" :instance i :stage "apply" 
+  :value v :do 
+  (aset v "value" (convert-int-to-type (aget i "type") 
+                                       (1+ (aget v "value")))))
 \end{ABMLCode}
 
-Составные присваивания (например, \GoInline{+=}) выполняют операцию перед записью.
+
+\subsubsection{Оператор декремента}
+Уменьшает на 1 значение ячейки памяти, на которую действует.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem" :type "1+=2" :stage "apply" :ap ac 1 f :value s :do 
+(aspect "opsem" :context ac :type "1-- stmt" :instance i :stage nil 
+:do 
+  (update-push-acontext ac :stage "apply")
+  (clear-update-eval-acontext ac :aspect "opsem::lvalue" 
+                                 :instance (aget i 1)))
+
+(aspect "opsem" :context ac :type "1-- stmt" :instance i :stage "apply" 
+  :value v :do 
+  (aset v "value" (convert-int-to-type (aget i "type") 
+                                       (1- (aget v "value")))))
+\end{ABMLCode}
+
+
+\subsubsection{Операторы присваивания}
+Присваивание сначала вычисляет левую часть (lvalue), затем правую (rvalue). Причем неявное приведение типов не допускается.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "assignment stmt" :instance i 
+  :stage nil :do 
+  (update-push-acontext ac :stage "eval 2")
+  (clear-update-eval-acontext ac :aspect "opsem::lvalue" 
+                                 :instance (aget i 1)))
+
+(aspect "opsem" :context ac :type "assignment stmt" :instance i 
+  :stage "eval 2" :value v :do 
+  (update-push-acontext ac :stage "apply" :ac 1 v)
+  (clear-update-eval-acontext ac :aspect "opsem::rvalue" 
+                                 :instance (aget i 2)))
+
+(aspect "opsem" :context ac :type "1=2" :stage "apply" :ap ac 1 f 
+  :value s :do (aset f "value" s))
+\end{ABMLCode}
+
+
+Составные присваивания (например, \GoInline{+=}) выполняют операцию перед записью. Допускается использовать все операции, что определялись в бинарных выражениях.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "1+=2" :stage "apply" 
+  :ap ac 1 f :value s :do 
+  (aset f "value" (convert-int-to-type (aget f "type") 
+    (+ (aget f "value") (aget s "value")))))
+
+(aspect "opsem" :context ac :type "1-=2" :stage "apply" 
+  :ap ac 1 f :value s :do 
+  (aset f "value" (convert-int-to-type (aget f "type") 
+    (- (aget f "value") (aget s "value")))))
+
+(aspect "opsem" :context ac :type "1*=2" :stage "apply" 
+  :ap ac 1 f :value s :do 
+  (aset f "value" (convert-int-to-type (aget f "type") 
+    (* (aget f "value") (aget s "value")))))
+
+(aspect "opsem" :context ac :type "1/=2" :stage "apply" 
+  :ap ac 1 f :value s :do 
+  (aset f "value" (convert-int-to-type (aget f "type") 
+    (/ (aget f "value") (aget s "value")))))
+
+(aspect "opsem" :context ac :type "1<<=2" :stage "apply" 
+  :ap ac 1 f :value s :do 
+  (aset f "value" (convert-int-to-type (aget f "type") 
+    (ash (aget f "value") (aget s "value")))))
+
+(aspect "opsem" :context ac :type "1>>=2" :stage "apply" 
+  :ap ac 1 f :value s :do 
     (aset f "value" (convert-int-to-type (aget f "type") 
-        (+ (aget f "value") (aget s "value")))))
+    (ash (aget f "value") (- (aget s "value"))))))
+
+(aspect "opsem" :context ac :type "1^=2" :stage "apply" 
+  :ap ac 1 f :value s :do 
+  (aset f "value" (convert-int-to-type (aget f "type") 
+    (logxor (aget f "value") (aget s "value")))))
+
+(aspect "opsem" :context ac :type "1|=2" :stage "apply" 
+  :ap ac 1 f :value s :do 
+  (aset f "value" (convert-int-to-type (aget f "type") 
+    (logior (aget f "value") (aget s "value")))))
+
+(aspect "opsem" :context ac :type "1%=2" :stage "apply"
+  :ap ac 1 f :value s :do 
+  (aset f "value" (convert-int-to-type (aget f "type") 
+  (rem (aget f "value") (aget s "value")))))
+
+(aspect "opsem" :context ac :type "1&=2" :stage "apply" 
+  :ap ac 1 f :value s :do 
+  (aset f "value" (convert-int-to-type (aget f "type") 
+  (logand (aget f "value") (aget s "value")))))
+
+(aspect "opsem" :context ac :type "1&^=2" :stage "apply" 
+  :ap ac 1 f :value s :do 
+  (aset f "value" (convert-int-to-type (aget f "type") 
+    (logand (aget f "value") (lognot (aget s "value"))))))
 \end{ABMLCode}
 
-\subsection{Условные операторы}
+\subsubsection{Условный оператор}
 Условный оператор \GoKeyword{if}.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem" :type "if stmt" :instance i :stage nil :do 
-    (update-push-aclosure ac :stage "apply" :av "block" (aget ac "block"))
-    (clear-update-eval-aclosure ac :instance (aget i "condition")))
-(aclosure ac :attribute "opsem" :type "if stmt" :stage "apply" :value c :ap ac "block" b :do 
-    (clear-update-eval-aclosure ac :instance (aget i (if c "then" "else")) 
-        :av "block" b))
+(aspect "opsem" :context ac :type "if stmt" :instance i :stage nil :do 
+  (update-push-acontext ac :stage "apply")
+  (clear-update-eval-acontext ac :instance (aget i "condition") 
+                                 :aspect "opsem::rvalue"))
+
+(aspect "opsem" :context ac :type "if stmt" :instance i :stage "apply" 
+  :value c :do 
+  (clear-update-eval-acontext ac :instance (aget i (if c "then" "else"))))
 \end{ABMLCode}
 
-\subsection{Циклы}
-Цикл \GoKeyword{for condition}.
+
+\subsubsection{Оператор выбора}
+Вычисление оператора выбора \GoKeyword{switch} начинается с вычисления контролирующего выражения - на равенство которому проверяются условия веток. 
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem" :type "for condition" :instance i :stage nil :ap ac "block" b :do 
-    (update-push-aclosure ac :stage "apply" :av "block" b)
-    (clear-update-eval-aclosure ac :instance (aget i "condition")))
-(aclosure ac :attribute "opsem" :type "for condition" :stage "apply" 
-    :value v :v v T :av ac "block" b :do 
-    (update-push-aclosure ac :stage nil :av "block" b)
-    (clear-update-eval-aclosure ac :instance (aget i "body")))
+(aspect "opsem" :context ac :type "expr switch stmt" :instance i 
+  :stage nil :do 
+  (update-push-acontext ac :stage "apply cont" 
+                           :av "block" (aget ac "block"))
+  (clear-update-eval-acontext ac :instance (aget i "controlled") 
+                                 :aspect "opsem::rvalue"))
 \end{ABMLCode}
 
-\subsection{Операторы передачи управления}
-Оператор \GoKeyword{return}.
+Вычисляем условие первой ветки, запускаем вычисление для последующих веток. Если контролирующего выражения нет, то считается, что условия веток проверяются на логическую истину \GoKeyword{true}.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem" :type "return stmt" :instance i :do 
-    (clear-update-eval-aclosure ac :instance (aget i 1)))
-(aclosure ac :attribute "opsem" :type "return stmt" :stage "ret" 
-    :value v :do (aset a "value" (car v)))
+(aspect "opsem" :context ac :type "expr switch stmt" :instance i 
+  :stage "apply cont" :value cont :ap i "cases" cs 
+  :v (null cs) nil :ap ac "block" b :do 
+  
+  (match :v cont nil :p cont T :do
+    (update-push-acontext ac :stage "evaluating cases" :av "cont" cont 
+      :av "left" (cdr cs) :av "block" b)
+    (clear-update-eval-acontext ac :instance (car cs) :av "cont" cont) 
+      :av "block" b))
 \end{ABMLCode}
 
-\subsection{Канальные операции}
-Оператор отправки в канал.
+После вычисления \ABMLString{expr case clause} возвращает истину, если хотя бы одно условие подошло. То есть эта стадия работает до тех пор, пока не сработала предыдущая ветка, или пока все ветки не закончились.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem" :type "1<-2" :instance i :do 
-    (update-push-aclosure ac :stage "send-value")
-    (clear-update-eval-aclosure ac :instance (aget i 1)))
-(aclosure ac :attribute "opsem" :type "1<-2" :instance i :stage "send-value" 
-    :value ch :ap i 2 e2 :do 
-    (update-push-aclosure ac :stage "send" :av "channel" ch)
-    (clear-update-eval-aclosure ac :instance e2))
-(aclosure ac :attribute "opsem" :type "1<-2" :stage "send" 
-    :ap ac "channel" ch :value val :do 
-    (aset ch "buffer" (append (aget ch "buffer") (list (aget val "value")))))
+(aspect "opsem" :context ac :type "expr switch stmt" :instance i 
+  :stage "evaluating cases" :ap ac "cont" cont :ap ac "left" left 
+  :v (null left) nil :value v :v v nil :ap ac "block" b :do 
+  
+  (update-push-acontext ac :av "cont" cont :av "left" (cdr left) 
+    :av "block" b)
+  (clear-update-eval-acontext ac :instance (car left) :av "cont" cont 
+    :av "block" b))
 \end{ABMLCode}
 
-Операция чтения из канала как выражение.
+У каждой ветки может быть несколько условий, проверяем каждое из них.
 
 \begin{ABMLCode}
-(aclosure ac :attribute "opsem::rvalue" :type "<-1" :instance i :do 
-    (clear-update-eval-aclosure ac :instance (aget i 1)))
-(aclosure ac :attribute "opsem::rvalue" :type "<-1" :stage "receive" 
-    :value ch :do (pop (aget ch "buffer")))
+(aspect "opsem" :context ac :type "expr case clause" :instance i 
+  :stage nil :ap ac "cont" cont :ap i "cases" cs :ap ac "block" b :do 
+  
+  (match :v (null cs) T :do nil 
+  :exit 
+  (update-push-acontext ac :stage "evaluating" :av "cont" cont 
+    :av "left" (cdr cs) :av "block" b)
+  (clear-update-eval-acontext ac 
+    :instance (mo "1==2" :av 1 cont :av 2 (car cs)) 
+    :aspect "opsem::rvalue") :av "block" b))
 \end{ABMLCode}
 
+Проверяем, подошел ли предыдущий случай этой ветки. В противном случае запускаем проверку последующих.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "expr case clause" :instance i 
+  :stage "evaluating" :value v :ap ac "cont" cont :ap ac "left" left 
+  :ap ac "block" b :do 
+    
+  (match :v v nil 
+  :do (nmatch :v (null left) T :exit nil 
+    :v (otype (car left)) "default" 
+    :exit 
+    (clear-update-eval-acontext ac :stage "evaluating body" 
+      :av "left" (aget i "statements") :av "block" b)
+    :do 
+    (update-push-acontext ac :av "cont" cont :av "left" (cdr cs) 
+      :av "block" b)
+    (clear-update-eval-acontext ac :instance (mo "1==2" :av 1 cont 
+      :av 2 (car cs)) :aspect "opsem::rvalue") :av "block" b)
+  :exit (clear-update-eval-acontext ac :stage "evaluating body" 
+    :av "left" (aget i "statements") :av "block" b)))
+\end{ABMLCode}
+
+Выполняется тело первой ветки, условие которой совпало с контролирующим выражением оператора выбора.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "expr case clause" :instance i 
+  :stage "evaluating body" :ap ac "left" left :ap ac "block" b :do 
+  (match :v (null left) T :do T :exit 
+    (update-push-acontext ac :av "left" (cdr left) :av "block" b)
+    (clear-update-eval-acontext ac :instance (car left) :av "block" b)))
+\end{ABMLCode}
+
+
+\subsubsection{Операторы циклов}
+
+Цикл с условием выполняет собственное тело до тех пор, пока условие цикла истинно.
+
+Начальная стадия отвечает за вычисление условия цикла.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "for condition" :instance i 
+  :stage nil :do 
+  (update-push-acontext ac :stage "apply")
+  (clear-update-eval-acontext ac :instance (aget i "condition") :aspect "opsem::rvalue"))
+\end{ABMLCode}
+
+В случае истинности условия, стадия \ABMLString{apply} выполняет тело цикла. После чего управление переходит к первой стадии.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "for condition" :instance i 
+  :stage "apply" :value v :v v T :do 
+  (update-push-acontext ac :stage nil)
+  (clear-update-eval-acontext ac :instance (aget i "body")))
+\end{ABMLCode}
+
+Классический цикл \GoKeyword{for}, помимо определенных в предыдущем случае, имеет оператор, выполнение которого происходит после каждого вычисления тела цикла.
+
+Оператор, выполняющийся один раз до цикла лексически выносится на строку до цикла. Так же происходит со всеми операторами, в которых присутствуют такие инициализирующие операторы.
+
+Сначала вычисляется условие цикла.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "for clause" :instance i 
+  :stage nil :do 
+  (update-push-acontext ac :stage "apply")
+  (clear-update-eval-acontext ac :instance (aget i "condition") :aspect "opsem::rvalue"))
+\end{ABMLCode}
+
+Если вычисленное условие истинно, то выполняем тело цикла.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "for clause" :instance i 
+  :stage "apply" :value v :v v T :do 
+  (update-push-acontext ac :stage "post")
+  (clear-update-eval-acontext ac :instance (aget i "body")))
+\end{ABMLCode}
+
+После чего, выполняем соответствующий оператор, и возвращаемся к началу.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "for clause" :instance i 
+  :stage "post" :do 
+  (update-push-acontext ac :stage nil)
+  (clear-update-eval-acontext ac :instance (aget i "post")))
+\end{ABMLCode}
+
+Далее пойдет речь о циклах с перебором элементов коллекций. Поскольку при этом переменные принимают лишь копированные значения ячеек, то эти копии необходимо создавать для каждого хранилища. Напишем функцию copy-cells, которая создает по списку ячеек, список ячеек, элементы которого имеют такие же значения.
+
+\begin{ABMLCode}
+(defun copy-cells (lst) 
+  (let ((r nil)) (dolist (c (reverse lst) r) 
+    (setq r (cons (mo "cell" :av "type" (aget c "type") 
+                             :av "value" (aget c "value"))
+                  r)))))
+\end{ABMLCode}
+
+Начнем с индексированных хранилищ - к элементам которых доступно обращение по индексу.
+
+Сначала вычислим хранилище, элементы которого необходимо перебирать. Для каждого возможного типа хранилища заведем отдельную стадию.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "for range indexable" :instance i 
+  :stage nil :ap i "indexable" ind :do 
+  (update-push-acontext ac :stage (otype (aget ind "type")))
+  (clear-update-eval-acontext ac :instance ind :aspect "opsem::rvalue"))
+\end{ABMLCode}
+
+Случай среза сведем к случаю массива.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "for range indexable" :instance i 
+  :stage "slice type" :value sl :ap sl "offset" ofst 
+  :ap sl "length" len :do 
+  
+  (clear-update-eval-acontext ac :instance (mo "for range indexable" 
+  :av "index" (aget i "index") 
+  :av "value" (aget i "value")
+  :av "operation" (aget i "operation") 
+  :av "indexable" (mo "array value" 
+    :av "type" (co "array type" :av "len" len 
+      :ap "elem type" (aget sl "type" "elem type"))
+    :av "elements" (copy-cells 
+      (subseq (aget sl (aseq "array" "elements")) ofst (+ ofst len))))
+  :av "body" (aget i "body"))))
+\end{ABMLCode}
+
+Случай строки так же сведем к случаю массива.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "for range indexable" :instance i 
+  :stage "string type" :value pr :ap pr "value" s :do 
+  
+  (clear-update-eval-acontext ac :instance (mo "for range indexable" 
+  :av "index" (aget i "index") 
+  :av "value" (aget i "value") 
+  :av "operation" (aget i "operation") 
+  :av "indexable" (mo "array value" 
+    :av "type" (co "array type" :av "len" (length s) 
+      :av "elem type" (co "unsigned int type" :av "bit size" 8)) 
+    :av "value" (map 'list #'char-code s)))))
+\end{ABMLCode}
+
+В случае массива запускаем итерационное вычисление.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "for range indexable" :instance i 
+  :stage "array type" :value arr :do 
+  (clear-update-eval-acontext ac :stage "evaluating" :av "now" 0 
+    :av "left" (copy-cells (aget arr "value"))))
+\end{ABMLCode}
+
+На стадии \ABMLString{evaluating} выполняется итерация цикла. То есть сначала присваиваются соответствующие значения переменным индекса и ключа, а потом выполняется тело цикла с этими значениями.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "for range indexable" :instance i 
+  :stage "evaluating" :ap ac "left" left :av ac "now" k :agent a :do 
+  
+  (aset a "variable cell" (aget i "index") k)
+  (aset a "variable cell" (aget i "value") (car left))
+  (update-push-acontext ac :av "now" (1+ k) :av "left" (cdr left))
+  (clear-update-eval-acontext ac :instance (aget i "body")))
+\end{ABMLCode}
+
+Теперь рассмотрим случай хранилища - карты. 
+
+Сначала вычисляем значение карты.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "for range map" :instance i 
+  :stage nil :do 
+  (update-push-acontext ac :stage "save")
+  (clear-update-eval-acontext ac :instance (aget i "map") 
+                                 :aspect "opsem::rvalue"))
+\end{ABMLCode}
+
+Затем сохраняем значения затеняемых переменных.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "for range map" :instance i 
+  :stage "save" :value m :ap m "entry" mv 
+  :p (attributes mv) ks :p nil vs :do 
+  
+  (dolist (k (reverse ks)) (setq vs (cons (aget mv k) vs))) 
+  (clear-update-eval-acontext ac :stage "evaluating" :av "keys" ks 
+    :av "values" (copy-cells vs)))
+\end{ABMLCode}
+
+На стадии \ABMLString{evaluating} выполняется итерация цикла. То есть сначала присваиваются соответствующие значения переменным индекса и ключа, а потом выполняется тело цикла с этими значениями.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "for range map" :instance i 
+  :stage "evaluating" :ap ac "keys" ks :ap ac "values" vs :agent a :do 
+  
+  (aset a "variable cell" (aget i "key") (car ks))
+  (aset a "variable cell" (aget i "values") (car vs))
+  (update-push-acontext ac :av "keys" (cdr ks) :av "values" (cdr vs))
+  (clear-update-eval-acontext ac :instance (aget i "body")))
+\end{ABMLCode}
+
+Наконец, рассмотрим цикл с перебором элементов по целому числу. Этот хоть и является урезанной версией классического цикла, но имеет собственный синтаксис. 
+
+Сначала вычисляется количество итераций. Переменная значений будет принимать значения от 0 включительно, до вычисленного значения исключительно.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "for range int" :instance i 
+  :stage nil :do 
+  (update-push-acontext ac :stage "start")
+  (clear-update-eval-acontext ac :instance (aget i "max") 
+                                 :aspect "opsem::rvalue"))
+\end{ABMLCode}
+
+На стадии \ABMLString{start} начинает итерационное вычисление тела цикла.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "for range int" :instance i 
+  :stage "start" :value m :do 
+  (clear-update-eval-acontext ac :stage "evaluating" :av "max" m 
+    :av "now" 0))
+\end{ABMLCode}
+
+На стадии \ABMLString{evaluating} выполняется итерация цикла. То есть сначала присваивается соответствующее значение переменной значения, а потом выполняется тело цикла с этими значениями.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "for range int" :instance i 
+  :stage "evaluating" :ap ac "max" m :av ac "now" k 
+  :agent a :v (< k m) T :do 
+  
+  (aset a "variable cell" (aget i "value") k)
+  (update-push-acontext ac :av "max" m :av "now" (1+ k))
+  (clear-update-eval-acontext ac :instance (aget i "body")))
+\end{ABMLCode}
+
+\subsubsection{Оператор возвращения}
+
+Вычисление оператора \GoKeyword{return} начинается с вычисления возвращаемых значений (если есть).
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "return stmt" :instance i 
+  :stage nil :ap ac 1 left :do 
+  
+  (update-push-acontext ac :stage "exiting before function")
+  (match :v (null left) T :exit 
+    (update-push-acontext ac :stage "evaluating" 
+      :av "left" (cdr left))
+    (clear-update-eval-acontext ac :instance (car left) 
+      :aspect "opsem::rvalue")))
+
+(aspect "opsem" :context ac :type "return stmt" :instance i 
+  :stage "evaluating" :value v :ap ac "left" left 
+  :ap ac "done" d :do 
+  
+  (match :v (null left) T 
+  :do (reverse d) 
+  :exit 
+  (update-push-acontext ac :av "left" (cdr left) :av "done" (cons v d))
+  (clear-update-eval-acontext ac :instance (car left) 
+    :aspect "opsem::rvalue")))
+\end{ABMLCode}
+
+Затем выходим из всех ранее принятых к вычислению конструкций, начиная с тех, что начали вычисляться последними, до тех пор, пока не встретим функцию. В этом случае возвращаем вычисленные значения, и заканчивает вычисление найденной функции. Причем при встрече с блоком не забываем возвращать прежние значения затененным переменным.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "return stmt" :instance i :stage "exiting before function" 
+    :value d :p (pop-acontext ac) ac1 :p (aget ac1 "instance") i1 :do 
+    (nmatch :v (is-instance i1 "block") T 
+    :exit (push-acontext ac) (update-eval-acontext ac1 :stage "variable back"))
+    :v (is-instance i1 "function call") T 
+    :exit d (push-acontext ac1)
+    :do d (eval-acontext ac)
+)
+\end{ABMLCode}
+
+\subsubsection{Оператор прерывания циклов}
+Вычисление оператора \GoKeyword{break} происходит похожим с предыдущим случаем образом. Только вместо завершения функции, данный оператор прерывает цикл. Такие операторы называют операторами передачи управления.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "break stmt" :instance i 
+  :stage nil :ap i 1 ln :p (pop-acontext ac) ac1 :ap ac1 "instance" i1 
+  :ap ac1 "label" ln1 :do
+  
+  (nmatch 
+  :v (is-instance i1 "block") T 
+  :exit 
+  (push-acontext ac) (update-eval-acontext ac1 :stage "variable back")
+  :v (and (is-instance i1 "for stmt") (or (not ln) (string= ln ln1))) 
+  :exit nil 
+  :v (and (is-instance i1 "switch stmt") (or (not ln) (string= ln ln1))) 
+  :exit nil 
+  :do (eval-acontext ac)))
+\end{ABMLCode}
+
+\subsubsection{Оператор следующего шагу цикла}
+Вычисление оператора \GoKeyword{continue} происходит аналогичным образом.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "continue stmt" :instance i 
+  :stage nil :ap i 1 ln :p (pop-acontext ac) ac1 :ap ac1 "instance" i1 
+  :ap ac1 "label" ln1 :do 
+  
+  (nmatch 
+  :v (is-instance i1 "block") T 
+  :exit 
+  (push-acontext ac) (update-eval-acontext ac1 :stage "variable back")
+  :v (and (is-instance i1 "for stmt") (or (not ln) (string= ln ln1))) 
+  :exit nil 
+  :do (eval-acontext ac)))
+\end{ABMLCode}
+
+\subsubsection{Оператор скачка}
+Вычисление оператора \GoKeyword{goto} происходит аналогичным образом.
+
+\begin{ABMLCode}
+(aspect "opsem" :context ac :type "goto stmt" :instance i 
+  :stage nil :ap i 1 ln :p (pop-acontext ac) ac1 
+  :ap ac1 "instance" i1 :do 
+  
+  (match :ap i1 "label" ln1 :v ln1 T :v (string= ln ln1) T 
+  :do (update-eval-acontext ac1 :stage nil)
+  :exit (match :v (is-instance i1 "block") T 
+    :ap i1 "label positions" lp :ap lp ln pos 
+    :do (match :v pos T :ap ac1 "statements" sts 
+      :p (nthcdr pos sts) scdr :do 
+      (update-push-acontext ac1 :av "left" (cdr scdr)) 
+      (update-push-acontext ac1 :instance (car scdr)) 
+      (eval-acontext ac)
+      :exit 
+      (push-acontext ac) (update-push-acontext ac1 :stage "variable back"))
+    :exit nil)))
+\end{ABMLCode}
 
 \end{document}

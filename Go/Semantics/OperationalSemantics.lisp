@@ -1,7 +1,7 @@
 #|
 	Operational semantics for the Go language
 
-    Last edit: 11/07/2026
+    Last edit: 13/07/2026
 |#
 
 
@@ -268,18 +268,20 @@
     :v (is-instance tp "string type") T :exit v 
     :do (mapcar #'char-code (coerce v 'list)))
 )
-; Сначала из среза вытаскивает значения, на которые он ссылается
-; Затем превращет полученный список в строку
+; В нетривиальном случае, сначала из среза вытаскивает значения, на которые он ссылается.
+; Затем возвращает строку, преобразованню из списка.
 (aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "[]byte type" 
     :ap ac "typed value" tv :ap tv "value" sv :ap i "type" tp :ap sv "offset" ofs :do 
-    (let ((lst nil) (cs (aget sv "array" "elements"))) (dotimes (k ofs) (setf cs (cdr cs))) ; cs - элементы, на которые указывает срез (справа могут быть лишние)
-    (dotimes (k (aget sv "length") (reverse lst)) (setf lst (cons (aget (car cs) "value") lst)) (setf cs (cdr cs))))
-    (match :v (is-instance tp "string type") nil :do sv 
-    :exit (coerce (mapcar #'code-char lst) 'string))
+    (nmatch :v (is-instance tp "string type") nil :exit sv
+    :p nil lst :p (aget sv "array" "elements") cs :do ; cs - элементы, на которые указывает срез (справа могут быть лишние)
+    (dotimes (k ofs) (setf cs (cdr cs))) 
+    (dotimes (k (aget sv "length") (reverse lst)) (setf lst (cons (aget (car cs) "value") lst)) (setf cs (cdr cs))) 
+    (coerce (mapcar #'code-char lst) 'string))
 )
 ; Создает и возвращает полученное значение
 (aspect "opsem::rvalue" :context ac :type "conversion" :instance i :stage "build value" 
-    :value v :ap i "type" tp :do (mo "typed primitive" :av "type" tp :av "value" v)
+    :value v :ap i "type" tp :v (is-instance tp "slice type") nil :do 
+    (mo "typed primitive" :av "type" tp :av "value" v)
 )
 
 ;; method expression
@@ -313,17 +315,6 @@
     :value r :ap r "type" tr :ap i "name" n :do 
     (nmatch :v tr "struct type"  :exit (aget r "fields" n "value") 
             :v tr "pointer type" :exit (aget r "target" "value" "fields" n "value"))
-)
-
-; В lvalue позиции может быть только структура (или указатель на неё)
-(aspect "opsem::lvalue" :context ac :type "selector expr" :instance i :stage nil :do 
-    (update-push-acontext ac :stage "return value")
-    (clear-update-eval-acontext ac :instance (aget i "receiver") :aspect "opsem::rvalue")
-)
-(aspect "opsem::lvalue" :context ac :type "selector expr" :instance i :stage "return value" 
-    :value r :ap i "name" n :ap r "type" tr :do 
-    (nmatch :v tr "struct type" :exit  (aget r "fields" n)
-            :v tr "pointer type" :exit (aget r "target" "value" "fields" n))
 )
 
 ;; index expression
@@ -504,7 +495,7 @@
 ;; method call
 ; Вычисляем получателя метода
 (aspect "opsem::rvalue" :context ac :type "method call" :instance i :stage nil :do 
-    (update-push-acontext ac :stage "eval arguments")
+    (update-push-acontext ac :stage "to function")
     (clear-update-eval-acontext ac :instance (aget i "receiver"))
 )
 ; Преобразуем метод в функцию
@@ -649,7 +640,6 @@
     (update-push-acontext ac :stage "apply 2" :av 1 v)
     (clear-update-eval-acontext ac :instance (aget i 2))
 )
-; Есть особый случай для MinInt % -1, но считаем программу корректно написанной
 (aspect "opsem::rvalue" :context ac :type "1%2" :stage "apply 2" 
     :ap ac 1 f :ap f "type" tp :ap f "value" fv :value s :ap s "value" sv :do 
     (convert-int-to-type tp (rem fv sv))
@@ -782,13 +772,12 @@
         (item avs (reverse dv)) 
         (setf dv (cons (aget a "variable cell" item) dv))))
     (update-push-acontext ac :stage "variable back")
-    (clear-update-eval-acontext ac :stage "evaluating statement" :av "left" sts :av "statements" sts)
+    (clear-update-eval-acontext ac :stage "evaluating statement" :av "left" sts)
 )
 ; Вычисляет очередной оператор блока (очередную инструкцию блока).
-; Для навигации, в том числе для меток, передает номер инструкции в блоке
 (aspect "opsem" :context ac :type "block" :instance i :stage "evaluating statement" 
-    :ap ac "left" left :v (null left) nil :ap ac "statements" sts :do 
-    (update-push-acontext ac :av "left" (cdr left) :av "statements" sts)
+    :ap ac "left" left :v (null left) nil :ap i "statements" sts :do 
+    (update-push-acontext ac :av "left" (cdr left))
     (clear-update-eval-acontext ac :instance (car left) :av "block" i)
 )
 ; Восстанавливает старые ячейки памяти декларированным в блоке (важны только затенённые) переменным.
@@ -807,7 +796,7 @@
 )
 
 ;; var decl
-; Если задаются без значений, то вычилсяем значения по типам переменеых.
+; Если задаются без значений, то вычилсяем значения по типам переменных.
 ; Иначе все переменные задаются с явно указанными значениями.
 (aspect "opsem" :context ac :type "var decl" :instance i :stage nil 
     :ap ac "block" b :ap i "names" ns :ap i "values" vs :ap i "types" ts :do 
@@ -1101,11 +1090,11 @@
 ;; for range map
 ; Вычисляем выражение, которое должно в итоге дать карту
 (aspect "opsem" :context ac :type "for range map" :instance i :stage nil :do 
-    (update-push-acontext ac :stage "map type")
+    (update-push-acontext ac :stage "save")
     (clear-update-eval-acontext ac :instance (aget i "map") :aspect "opsem::rvalue")
 )
 ; Сохраняем затеняемые значения переменных, переходим к итерациям цикла
-(aspect "opsem" :context ac :type "for range map" :instance i :stage "map type" 
+(aspect "opsem" :context ac :type "for range map" :instance i :stage "save" 
     :value m :ap m "entry" mv :p (attributes mv) ks :p nil vs :do 
     (dolist (k (reverse ks)) (setq vs (cons (aget mv k) vs)))  ; cоздаем список значений
     ; Переходим к итерациям цикла
@@ -1123,11 +1112,11 @@
 ;; for range int
 ; Вычисляет количество итераций
 (aspect "opsem" :context ac :type "for range int" :instance i :stage nil :do 
-    (update-push-acontext ac :stage "int type")
+    (update-push-acontext ac :stage "start")
     (clear-update-eval-acontext ac :instance (aget i "max") :aspect "opsem::rvalue")
 )
-; Сохраняет переменные, если нужно. Запускает итерации цикла
-(aspect "opsem" :context ac :type "for range int" :instance i :stage "int type" 
+; Запускает итерации цикла
+(aspect "opsem" :context ac :type "for range int" :instance i :stage "start" 
     :value m :do 
     (clear-update-eval-acontext ac :stage "evaluating" :av "max" m :av "now" 0)
 )
