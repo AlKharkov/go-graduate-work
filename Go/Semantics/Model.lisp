@@ -428,3 +428,9 @@
 ; case msg1 := <-ch1: fmt.Println("Received ", msg1)
 ; case msg2 := <-ch2: fmt.Println("Received ", msg2)
 ; }
+
+;;; ================================================
+;;; Packages
+;;; ================================================
+
+(mot "file" :av "package" "package name" :av "block" "block")

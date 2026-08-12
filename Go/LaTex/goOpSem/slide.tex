@@ -2719,7 +2719,7 @@ for i := 0; i < 9; i++ { body(i) }
   (clear-update-eval-acontext ac :instance (aget i "body")))
 \end{ABMLCode}
 
-\subsubsection{Оператор возвращения}
+\subsubsection{Оператор return}
 
 Вычисление оператора \GoKeyword{return} начинается с вычисления возвращаемых значений (если есть).
 
@@ -2759,7 +2759,7 @@ for i := 0; i < 9; i++ { body(i) }
 )
 \end{ABMLCode}
 
-\subsubsection{Оператор прерывания циклов}
+\subsubsection{Оператор break}
 Вычисление оператора \GoKeyword{break} происходит похожим с предыдущим случаем образом. Только вместо завершения функции, данный оператор прерывает цикл. Такие операторы называют операторами передачи управления.
 
 \begin{ABMLCode}
@@ -2778,7 +2778,7 @@ for i := 0; i < 9; i++ { body(i) }
   :do (eval-acontext ac)))
 \end{ABMLCode}
 
-\subsubsection{Оператор следующего шагу цикла}
+\subsubsection{Оператор continue}
 Вычисление оператора \GoKeyword{continue} происходит аналогичным образом.
 
 \begin{ABMLCode}
@@ -2795,7 +2795,7 @@ for i := 0; i < 9; i++ { body(i) }
   :do (eval-acontext ac)))
 \end{ABMLCode}
 
-\subsubsection{Оператор скачка}
+\subsubsection{Оператор goto}
 Вычисление оператора \GoKeyword{goto} происходит аналогичным образом.
 
 \begin{ABMLCode}
