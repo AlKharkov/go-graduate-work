@@ -1,6 +1,7 @@
 Go/ast-converter/go.mod
 Go/ast-converter/go.sum
 Go/ast-converter/output
+Go/ast-converter/astCopy.go.txt
 
 Go/LaTex/goOpSem/slide.out
 Go/LaTex/goOpSem/slide.aux

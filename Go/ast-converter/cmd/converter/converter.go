@@ -17,18 +17,17 @@ type Translator struct {
 	unknownLog strings.Builder
 }
 
-func (t *Translator) write(format string, args ...interface{}) {
+func (t *Translator) write(format string, args ...any) {
 	t.output.WriteString(strings.Repeat("  ", t.indent))
 	t.output.WriteString(fmt.Sprintf(format, args...))
 	t.output.WriteString("\n")
 }
 
-func (t *Translator) logUnknown(format string, args ...interface{}) {
+func (t *Translator) logUnknown(format string, args ...any) {
 	t.unknownLog.WriteString(fmt.Sprintf(format, args...))
 	t.unknownLog.WriteString("\n")
 }
 
-// visitNode - единый метод для обработки узла: строит AST и конвертирует в ABML
 func (t *Translator) visitNode(node ast.Node) {
 	switch n := node.(type) {
 	case *ast.File:

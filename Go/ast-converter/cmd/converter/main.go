@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	filename := "../../testdata/2.go"
+	filename := "../../testdata/0.go"
 	if len(os.Args) > 1 {
 		filename = os.Args[1]
 	}
