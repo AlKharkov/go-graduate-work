@@ -1,7 +1,7 @@
 #|
 	Operational semantics for the Go language
 
-    Last edit: 13/07/2026
+    Last edit: 15/09/2026
 |#
 
 
@@ -185,7 +185,6 @@
                          :av "body"      (aget i "body")
                          :av "closure"   c)
 )
-
 
 ;; method lit
 ; Создаёт и возвращает значение метода.

@@ -1,0 +1,15 @@
++nil value
+-nil form typed primitives
+typed primitive->value (listt)->untyped const
+
++pointer value (rewrite composite value)
+
+selector expr -> 1 method access + 2 field access
+
+renamed fields: channel value, function signature, method signature
+
++method signature unnamed results
+
+fors: operation->op
+
+receives -> receive

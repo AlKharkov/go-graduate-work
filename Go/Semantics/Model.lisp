@@ -1,7 +1,7 @@
 #|
      Model of the Go language
 
-     Last edit: 03/07/2026
+     Last edit: 18/09/2026
 |#
 
 
@@ -9,7 +9,7 @@
 ;;; Names
 ;;; ================================================
 
-(typedef "identifier"     (uniont string))
+(typedef "identifier"     string)
 (typedef "constant name"  "identifier")
 (typedef "variable name"  "identifier")
 (typedef "field name"     "identifier")
@@ -34,8 +34,8 @@
 (typedef "int type"      (uniont "signed int type" "unsigned int type"))
 (cot "signed int type"   :at "bit size" (enumt 8 16 32 64))
 (cot "unsigned int type" :at "bit size" (enumt 8 16 32 64))
-(cot "float type"        :av "bit size" (enumt 32 64))
-(cot "complex type"      :av "bit size" (enumt 64 128))
+(cot "float type"        :at "bit size" (enumt 32 64))
+(cot "complex type"      :at "bit size" (enumt 64 128))
 
 ;; composite types
 (typedef "composite type" (uniont "array type" "slice type" "struct type" 
@@ -44,37 +44,37 @@
 
 (cot "array type"   :at "elem type" "type" :at "len" nat)
 (cot "slice type"   :at "elem type" "type")
-(cot "struct type"  :at "fields"  (cot :amap "field name" "type")
+(cot "struct type"  :at "fields"  (cot :amap "field name" "type")  ; does not support embedding
                     :at "ordered" (listt "field name"))  ; (static analysis attribute) for the unnamed initiation
 (cot "pointer type" :at "type" "type")
 
 ;; function type omits parameter names (only types matter for type checking)
 (cot "function type" 
      :at "param types"   (listt "type") 
-     :at "variadic type" "type" 
+     :at "variadic type" "type" ; nil if not variadic
      :at "result types"  (listt "type"))
 
 (cot "method type" 
      :at "receiver type" "type" 
      :at "param types"   (listt "type") 
-     :at "variadic type" "type" 
+     :at "variadic type" "type" ; nil if not variadic
      :at "result types"  (listt "type"))
 
-(cot "interface type" :at "methods"   (cot :amap "method name" "method type"))
+(cot "interface type" :at "methods"   (cot :amap "method name" "method type")) ; does not support embedded interfaces
 (cot "map type"       :at "key type"  "type" :at "elem type" "type")
-(cot "channel type"   :at "elem type" "type")  ; direction is omitted (irrelevant for well-typed programs)
+(cot "channel type"   :at "elem type" "type" :at "dir" (enumt "send" "recv" "both"))
 
 
 ;;; ================================================
 ;;; Cells and values
 ;;; ================================================
 
-;; A cell is a mutable container that holds a Go value. The cell type is a pointer to its value.
+;; A cell is a mutable container that holds a Go value.
 ;; Variables are bound to cells, not directly to values.
-(mot "cell" :at "value" "Go value" :at "type" "type")
+(mot "cell" :at "value" "Go value")
 
 ;; There are no untyped constants at the operational semantics (runtime) phase.
-(typedef "Go value" (uniont "untyped constant" "typed primitive" "composite value"))
+(typedef "Go value" (uniont "nil value" "typed primitive" "composite value"))
 
 ;; untyped constant
 (typedef "untyped constant" (uniont bool int real string complex))  ; (static analysis type)
@@ -82,14 +82,15 @@
 ;; typed value
 (mot "typed primitive" 
      :at "type" "type"  ; filled by static analysis phase
-     :at "value" (uniont "nil" "untyped constant"))
+     :at "value" "untyped constant")
 
 ;; nil is typed too; each reference type has its own typed nil
-(cot "nil")
+(mot "nil value" :at "type" "type")
 
 ;; composite value (reference typed store additional metadata)
-(typedef "composite value" (uniont "array value" "slice value" "struct value" "map value" "cell"  ; cell also models the value of a pointer
-                                   "channel value" "function value" "method value" "interface value"))
+(typedef "composite value" (uniont "array value" "slice value" "struct value" "map value" 
+                                   "pointer value" "channel value" "function value" 
+                                   "method value" "interface value"))
 
 ;; array stores elements inline; assignment copies the entire array
 (mot "array value" 
@@ -112,24 +113,28 @@
      :at "type"    "map type" 
      :at "entries" (mot :amap "Go value" "cell"))
 
+(mot "pointer value"
+     :at "type"  "pointer type"
+     :at "value" "cell")
+
 ;; channel buffers are FIFO queues; send/receive queues hold waiting goroutines
 (mot "channel value" 
-     :at "type"          "channel type" 
-     :at "buffer"        (listt "Go value") 
-     :at "send queue"    (listt "cell") 
-     :at "receive queue" (listt "cell") 
-     :at "closed"        bool)
+     :at "type"       "channel type" 
+     :at "buffer"     (listt "Go value") 
+     :at "send queue" (listt "cell") 
+     :at "recv queue" (listt "cell") 
+     :at "closed"     bool)
 
 (mot "function value" 
      :at "type"      "function type" 
      :at "signature" "function signature" 
      :at "body"      "block" 
-     :at "closure"   (mot :amap "variable name" "cell"))
+     :at "closure"   (mot :amap "variable name" "cell")) ; holds all variables accessible at the point of function declaration
 
 (mot "function signature" 
-     :at "parameters"     (listt "param decl") 
-     :at "variadic param" "param decl" 
-     :at "results"        (uniont (listt "type") (listt "param decl")))  ; results may be named or unnamed
+     :at "parameters" (listt "param decl") 
+     :at "variadic"   "param decl" 
+     :at "results"    (uniont (listt "type") (listt "param decl")))  ; results may be named or unnamed
 
 (mot "param decl" :at "type" "type" :at "name" "parameter name")
 
@@ -140,14 +145,14 @@
      :at "closure"   (mot :amap "variable name" "cell"))
 
 (mot "method signature" 
-     :at "receiver"       "param decl" 
-     :at "parameters"     (listt "param decl") 
-     :at "variadic param" "param decl" 
-     :at "results"        (listt "param decl"))
+     :at "receiver"   "param decl" 
+     :at "parameters" (listt "param decl") 
+     :at "variadic"   "param decl" 
+     :at "results"    (uniont (listt "type") (listt "param decl"))) ; holds all variables accessible at the point of method declaration
 
 (mot "interface value" 
      :at "type"  "interface type" 
-     :at "value" "typed value")    ; dynamic type is stored inside the typed value
+     :at "value" "Go value")
 
 
 ;;; ================================================
@@ -156,7 +161,7 @@
 
 (typedef "literal" (uniont "untyped constant" "numeric lit" "composite lit" "function lit" "method lit"))
 
-(mot "numeric lit" :at "value" string)  ; translated to "untyped constant"
+(mot "numeric lit" :at "text" string)  ; translated to "untyped constant"
 
 (typedef "composite lit" (uniont "array lit" "slice lit" "struct lit" "map lit"))
 
@@ -198,9 +203,10 @@
 ;;; ================================================
 
 ;; All expressions contain the "type" attribute, whose value is calculated during the static analysis phase.
-(typedef "expression" (uniont "literal" "variable ref" "(1)" "conversion" "method expr" "selector expr" 
-                              "index expr" "slice expr" "type assertion" "<-1" 
-                              "function call" "unary expression" "binary expression"))
+(typedef "expression" (uniont "literal" "variable ref" "(1)" "conversion" "method expr" 
+                              "field access" "method access" "index expr" "slice expr" 
+                              "type assertion" "<-1" "function call" "method call"
+                              "unary expression" "binary expression"))
 
 ;; represents a use of an already declared variable (not a new declaration)
 (mot "variable ref" :at "name" "variable name" :at "type" "type")
@@ -213,7 +219,9 @@
 ;; method expression returns a function with the receiver as first parameter
 (mot "method expr" :at "receiver type" "type" :at "name" "method name" :at "type" "type")
 
-(mot "selector expr" :at "receiver" "expression" :at "name" "identifier" :at "type" "type")  ; field or method access
+(mot "field access" :at "receiver" "expression" :at "name" "field name" :at "type" "type")
+
+(mot "method access" :at "receiver" "expression" :at "name" "method name" :at "type" "method type")
 
 (mot "index expr" :at "indexable" "expression" :at "index" "expression" :at "type" "type")  ; indexable is an array, slice, map or string
 
@@ -279,7 +287,7 @@
 	:at "label positions"  (mot :amap "label name" nat)        ; statements index for each label
      :at "all variables"    (listt "variable name")             ; all variable names found in this block
      :at "decl variables"   (listt "variable name")             ; variable names that are declared in this block
-     :at "variable cells"   (mot :amap "variable name" "cell")) ; cells for each variable`s memory cell before entering the block
+     :at "variable cells"   (mot :amap "variable name" "cell")) ; cells for each variable`s memory cell before entering the block. Used to restore shadowed variables on block exit.
 
 ;;; ================================================
 ;;; Declarations
@@ -380,26 +388,26 @@
 (mot "for range indexable"
      :at "index"     "variable name"
      :at "value"     "variable name"          ; optional
-     :at "operation" (enumt "assign" "decl")  ; = or :=
+     :at "op"        (enumt "assign" "decl")  ; = or :=
      :at "indexable" "expression"             ; array, slice or string
      :at "body"      "block")
 
 (mot "for range map"
-     :at "key"       "variable name"
-     :at "value"     "variable name"          ; optional
-     :at "operation" (enumt "assign" "decl")
-     :at "map"       "expression"
-     :at "body"      "block")
+     :at "key"   "variable name"
+     :at "value" "variable name"          ; optional
+     :at "op"    (enumt "assign" "decl")
+     :at "map"   "expression"
+     :at "body"  "block")
 
 (mot "for range channel"
-     :at "value"     "variable name"
-     :at "operation" (enumt "assign" "decl") 
-     :at "channel"   "expression" 
-     :at "body"      "block")
+     :at "value"   "variable name"
+     :at "op"      (enumt "assign" "decl") 
+     :at "channel" "expression" 
+     :at "body"    "block")
 
 (mot "for range int"
      :at "value" "variable name" 
-     :at "operation" (enumt "assign" "decl")
+     :at "op"    (enumt "assign" "decl")
      :at "max"   "expression"
      :at "body"  "block")
 
@@ -416,11 +424,15 @@
 (mot "select stmt" :at "cases" (listt "common clause"))
 
 (mot "common clause" 
-     :at "case"       (uniont "send stmt" "receive assign" "receive decl" "default") 
+     :at "case"       (uniont "1<-2" "receive" "default") 
      :at "statements" (listt "statement"))
 
-(mot "receive assign" :at 1 (listt "expression")    :at 2 "expression")  ; x, ok = <-ch
-(mot "receive decl"   :at 1 (listt "variable name") :at 2 "expression")  ; x, ok := <-ch
+(mot "receive" 
+     :at "value"   "expression"
+     :at "ok"      "expression" ; variable to receive error or (nil if ok, optional)
+     :at "channel" "expression"
+     :at "op"      (enumt "assign" "decl") ; = for assign, := for decl
+)
 ; ch1, ch2 := make(chan string), make(chan string)
 ; go func() { time.Sleep(1 * time.Second); ch1 <- "data from channel 1" }()
 ; go func() { time.Sleep(2 * time.Second); ch2 <- "data from channel 2" }()
@@ -433,4 +445,4 @@
 ;;; Packages
 ;;; ================================================
 
-(mot "file" :av "package" "package name" :av "block" "block")
+(mot "file" :at "package" "identifier" :at "block" "block")
